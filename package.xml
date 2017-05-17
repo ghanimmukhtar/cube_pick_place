@@ -8,8 +8,7 @@
 
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>crustcrawler_core_msgs</build_depend>
-  <build_depend>crustcrawler_mover_utils</build_depend>
+  <build_depend>crustcrawler_core_msgs</build_depend> 
   <build_depend>crustcrawler_mover_utils</build_depend>
   <build_depend>moveit_ros_planning_interface</build_depend>
   <build_depend>roscpp</build_depend>
@@ -17,8 +16,11 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>trajectory_msgs</build_depend>
+  <build_depend>rgbd_utils</build_depend>
+  <build_depend>cafer_core</build_depend>
 
-  <run_depend>crustcrawler_mover_utils</run_depend>
+
+ 
   <run_depend>crustcrawler_core_msgs</run_depend>
   <run_depend>crustcrawler_mover_utils</run_depend>
   <run_depend>moveit_ros_planning_interface</run_depend>
@@ -27,7 +29,8 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>trajectory_msgs</run_depend>
-
+  <run_depend>rgbd_utils</run_depend>
+  <run_depend>cafer_core</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
