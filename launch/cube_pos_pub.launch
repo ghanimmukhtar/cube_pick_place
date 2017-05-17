@@ -1,0 +1,30 @@
+<launch>
+    <arg name="ns" default=""/>
+    <arg name="exec_name" default="cube_pos_pub"/>
+    <arg name="modality" default="color"/>
+    <arg name="threshold" default="0.5"/>
+
+    <!--CAFER-->
+    <arg name="cafer_type" default="babbling_wave"/>
+    <arg name="managed_uuid" default="none"/>
+    <!--/CAFER-->
+   
+    <rosparam command="load" file="$(find dream_babbling)/params/global_params.yml"/>
+    <!--node name="$(arg exec_name)" pkg="dream_babbling" type="$(arg exec_name)" ouput="screen" launch-prefix="xterm -e gdb -REMOVEMEFORDEBUG-args"-->
+    <node name="$(arg exec_name)" pkg="dream_babbling" type="$(arg exec_name)" ouput="screen">
+
+
+        <rosparam ns="cafer" subst_value="True">
+            mgmt: "/management_topic"
+            freq: 1.0
+            type: "$(arg cafer_type)"
+            uuid: "$(arg managed_uuid)"
+        </rosparam>
+        <rosparam command="load" file="$(find dream_babbling)/params/experiment_settings.yml" ns="experiment"/>
+        <rosparam ns="experiment/soi" subst_value="True">
+            load_exp: ""
+            threshold: "$(arg threshold)"
+            modality: "$(arg modality)"
+        </rosparam>
+        </node>
+</launch>

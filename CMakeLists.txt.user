@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 3.0.1, 2017-05-17T14:10:09. -->
+<!-- Written by QtCreator 3.0.1, 2017-05-17T17:09:31. -->
 <qtcreator>
  <data>
   <variable>ProjectExplorer.Project.ActiveTarget</variable>
@@ -53,13 +53,13 @@
   <valuemap type="QVariantMap">
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Desktop</value>
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">Desktop</value>
-   <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">{3b1ebe32-386c-4cc5-8d07-df9df48315c5}</value>
+   <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">{701a5c9f-5adc-4325-b53e-3103552b72b7}</value>
    <value type="int" key="ProjectExplorer.Target.ActiveBuildConfiguration">0</value>
    <value type="int" key="ProjectExplorer.Target.ActiveDeployConfiguration">0</value>
    <value type="int" key="ProjectExplorer.Target.ActiveRunConfiguration">0</value>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.0">
     <value type="bool" key="CMakeProjectManager.CMakeBuildConfiguration.UseNinja">false</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/ghanim/git/catkin_ws/build/cube_pick_place</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/lenilegoff/dream/arm_experiments_ws/build/cube_pick_place</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="QString" key="CMakeProjectManager.MakeStep.AdditionalArguments"></value>
@@ -95,12 +95,13 @@
     <value type="int" key="ProjectExplorer.BuildConfiguration.BuildStepListCount">2</value>
     <value type="bool" key="ProjectExplorer.BuildConfiguration.ClearSystemEnvironment">false</value>
     <valuelist type="QVariantList" key="ProjectExplorer.BuildConfiguration.UserEnvironmentChanges">
-     <value type="QString">CMAKE_PREFIX_PATH= /home/ghanim/git/catkin_ws/devel:/home/ghanim/git/catkin_ws/install:/opt/ros/indigo</value>
-     <value type="QString">ROS_ETC_DIR= /opt/ros/indigo/etc/ros</value>
-     <value type="QString">ROS_MASTER_URI= http://localhost:11311</value>
-     <value type="QString">ROS_PACKAGE_PATH= /home/ghanim/git/catkin_ws/src:/opt/ros/indigo/share:/opt/ros/indigo/stacks</value>
-     <value type="QString">ROS_ROOT= /opt/ros/indigo/share/ros</value>
-     <value type="QString">ROS_TEST_RESULTS_DIR= /home/ghanim/git/catkin_ws/build/test_results</value>
+     <value type="QString">CMAKE_PREFIX_PATH=/home/lenilegoff/dream/arm_experiments_ws/devel:/opt/ros/indigo</value>
+     <value type="QString">ROS_DISTRO=indigo</value>
+     <value type="QString">ROS_ETC_DIR=/opt/ros/indigo/etc/ros</value>
+     <value type="QString">ROS_MASTER_URI=http://localhost:11311</value>
+     <value type="QString">ROS_PACKAGE_PATH=/home/lenilegoff/dream/arm_experiments_ws/src:/opt/ros/indigo/share:/opt/ros/indigo/stacks</value>
+     <value type="QString">ROS_ROOT=/opt/ros/indigo/share/ros</value>
+     <value type="QString">ROS_TEST_RESULTS_DIR=/home/lenilegoff/dream/arm_experiments_ws/build/test_results</value>
     </valuelist>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Default</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">Default</value>
@@ -156,15 +157,15 @@
      <value type="int">13</value>
      <value type="int">14</value>
     </valuelist>
-    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguation.Title">cube_pick_place</value>
-    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments"></value>
-    <value type="bool" key="CMakeProjectManager.CMakeRunConfiguration.UseTerminal">false</value>
-    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory"></value>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">cube_pick_place</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Arguments"></value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Executable"></value>
+    <value type="bool" key="ProjectExplorer.CustomExecutableRunConfiguration.UseTerminal">false</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory">%{buildDir}</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Custom Executable</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.cube_pick_place</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">false</value>
@@ -181,7 +182,7 @@
  </data>
  <data>
   <variable>ProjectExplorer.Project.Updater.EnvironmentId</variable>
-  <value type="QByteArray">{4d77fa48-8c06-4e35-81a3-1ac0121c4a09}</value>
+  <value type="QByteArray">{8428fa5f-ebcf-4bc2-8868-b3a75964d568}</value>
  </data>
  <data>
   <variable>ProjectExplorer.Project.Updater.FileVersion</variable>
