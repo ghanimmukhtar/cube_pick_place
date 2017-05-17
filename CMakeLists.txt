@@ -32,3 +32,6 @@ include_directories(
 
 add_executable(cube_pick_place src/cube_pick_place.cpp)
 target_link_libraries(cube_pick_place ${catkin_LIBRARIES})
+
+add_executable(get_rpy src/get_rpy.cpp)
+target_link_libraries(get_rpy ${catkin_LIBRARIES})

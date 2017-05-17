@@ -88,10 +88,31 @@ public:
     }
 
     bool approach(Eigen::Vector3d goal){
-        //geometry_msgs::Pose goal_pose;
-        //goal_pose;
+        /*tf::Quaternion quat_nagles;
+        double pitch = 0, step = 0.1;
+        ROS_WARN_STREAM("planning for angle : " << atan2(goal(1), goal(0)));
+        quat_nagles.setRPY(atan2(goal(1), goal(0)), 1.1, -M_PI);
+        geometry_msgs::Pose goal_pose;
+        goal_pose.position.x = goal(0);
+        goal_pose.position.y = goal(1);
+        goal_pose.position.z = goal(2);
+        goal_pose.orientation.w = quat_nagles.getW();
+        goal_pose.orientation.x = quat_nagles.getX();
+        goal_pose.orientation.y = quat_nagles.getY();
+        goal_pose.orientation.z = quat_nagles.getZ();
         open_gripper();
-        //_crustcrawler_mover->group->
+        _crustcrawler_mover->group->setPoseTarget(goal_pose);
+        //
+        while(!_crustcrawler_mover->group->plan(_group_plan)){
+            quat_nagles.setRPY(0, pitch, atan2(goal(1), goal(0)));
+            goal_pose.orientation.w = quat_nagles.getW();
+            goal_pose.orientation.x = quat_nagles.getX();
+            goal_pose.orientation.y = quat_nagles.getY();
+            goal_pose.orientation.z = quat_nagles.getZ();
+            _crustcrawler_mover->group->setPoseTarget(goal_pose);
+            pitch = pitch + step;
+        }*/
+        //ROS_WARN_STREAM("found solution with pitch = " << pitch);
         _crustcrawler_mover->group->setPositionTarget(goal(0), goal(1), goal(2) + _approach_distance);
         if(_crustcrawler_mover->group->plan(_group_plan))
             if(_crustcrawler_mover->group->execute(_group_plan))
@@ -128,8 +149,18 @@ public:
     }
 
     bool retract(){
+        _crustcrawler_mover->group->setPositionTarget(_crustcrawler_mover->global_parameters.get_eef_pose().position.x,
+                                                      _crustcrawler_mover->global_parameters.get_eef_pose().position.y,
+                                                      _crustcrawler_mover->global_parameters.get_eef_pose().position.z + _approach_distance);
+        if(_crustcrawler_mover->group->plan(_group_plan))
+            if(_crustcrawler_mover->group->execute(_group_plan))
+                return true;
+            else
+                return false;
+        else
+            return false;
         //construct two points vector to plan for straight line motion with open gripper
-        _waypoints.clear();
+        /*_waypoints.clear();
         _waypoints.push_back(_crustcrawler_mover->global_parameters.get_eef_pose());
         _waypoints.push_back(_crustcrawler_mover->global_parameters.get_eef_pose());
         _waypoints[1].position.z += _retract_distance;
@@ -143,7 +174,7 @@ public:
                 return true;
         }
         else
-            return false;
+            return false;*/
     }
 
     bool drop_object(Eigen::Vector3d goal){
@@ -181,10 +212,12 @@ int main(int argc, char **argv)
 
     Cube_picker_placer pick_place_arm;
 
+    double x, y, z;
     pick_place_arm.go_home();
-    Eigen::Vector3d goal(0.4, -0.1, 0.07);
+    Eigen::Vector3d goal(0.27, -0.15, 0.05);
     Eigen::Vector3d drop_point(0.2, 0.26, 0.2);
     while(ros::ok()){
+        pick_place_arm.go_home();
         if(pick_place_arm.approach(goal))
             if(pick_place_arm.pick_object(goal))
                 if(pick_place_arm.retract())
@@ -198,7 +231,12 @@ int main(int argc, char **argv)
                 ROS_WARN("The picking didn't succeed :(:(:(:(");
         else
             ROS_WARN("The approaching didn't succeed :(:(:(:(");
-        ROS_INFO("This iteration has finished please press enter for the next ...");
+        ROS_INFO("This iteration has finished please, enter position and press enter for the next ...");
+        //std::cin >> x, y, z;
+        //goal(0) = x;
+        //goal(1) = y;
+        //goal(2) = z;
+        ROS_WARN_STREAM("I am planning for goal : " << goal);
         std::cin.ignore();
     }
 
