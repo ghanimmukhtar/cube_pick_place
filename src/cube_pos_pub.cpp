@@ -109,7 +109,13 @@ public:
         }
 
         compute_saliency_map(input_cloud);
-//        find_center_object();
+        find_center_object();
+        ip::PointCloudT seg_cloud;
+        _soi.extractCloud(seg_cloud);
+        sensor_msgs::PointCloud2 seg_cloud_msg;
+        pcl::toROSMsg(seg_cloud,seg_cloud_msg);
+        seg_cloud_msg.header = depth_msg->header;
+        _segment_pub->publish(seg_cloud_msg);
         _position_pub->publish(_position_msg);
 
     }
@@ -162,11 +168,10 @@ public:
     }
 
     void find_center_object(){
-        for(auto it = _soi.get_weights()[_modality].begin();
-            it != _soi.get_weights()[_modality].end(); it++){
+        std::map<uint32_t,double> weights = _soi.get_weights()[_modality];
+        for(auto it = weights.begin(); it != weights.end(); ++it){
             if(it->second < _threshold){
-                _soi.getSupervoxels().erase(it->second);
-                _soi.getAdjacencyMap().erase(it->second);
+                _soi.remove(it->first);
                 _soi.consolidate();
             }
         }

@@ -1,4 +1,4 @@
-# All settings in this file will be uploaded to the parameter server under the project namespace:
+  # All settings in this file will be uploaded to the parameter server under the project namespace:
 # /namespace/params/setting_1 ... setting_n
 #
 # Parameters declared as <arg name="arg_param" default="param_value"/>
