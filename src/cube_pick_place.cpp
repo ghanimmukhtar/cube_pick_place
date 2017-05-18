@@ -126,6 +126,17 @@ public:
     bool pick_object(Eigen::Vector3d goal){
         open_gripper();
 
+        _crustcrawler_mover->group->setPositionTarget(goal(0), goal(1), goal(2));
+        if(_crustcrawler_mover->group->plan(_group_plan))
+            if(_crustcrawler_mover->group->execute(_group_plan)){
+                close_gripper();
+                return true;
+            }
+            else
+                return false;
+        else
+            return false;
+        /*
         //construct two points vector to plan for straight line motion with open gripper
         _waypoints.clear();
         _waypoints.push_back(_crustcrawler_mover->global_parameters.get_eef_pose());
@@ -145,7 +156,7 @@ public:
                 return false;
         }
         else
-            return false;
+            return false;*/
     }
 
     bool retract(){
@@ -217,6 +228,7 @@ int main(int argc, char **argv)
     Eigen::Vector3d goal(0.27, -0.15, 0.05);
     Eigen::Vector3d drop_point(0.2, 0.26, 0.2);
     while(ros::ok()){
+        pick_place_arm.open_gripper();
         pick_place_arm.go_home();
         if(pick_place_arm.approach(goal))
             if(pick_place_arm.pick_object(goal))
