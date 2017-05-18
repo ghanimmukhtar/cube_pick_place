@@ -84,7 +84,7 @@ public:
             pcl::fromROSMsg(ptcl_msg, *input_cloud);
 
         }else {
-            ROS_INFO_STREAM("BABBLING_NODE : Waiting for input point_cloud");
+            ROS_INFO_STREAM("Waiting for input point_cloud");
             return;
         }
 
