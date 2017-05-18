@@ -22,7 +22,7 @@
         </rosparam>
         <rosparam command="load" file="$(find cube_pick_place)/params/experiment_settings.yml" ns="experiment"/>
         <rosparam ns="experiment/soi" subst_value="True">
-            load_exp: "/home/lenilegoff/Bureau/sm_test"
+            load_exp: "/home/ghanim/ros_home/cafer_db/dream_babbling/babbling/iteration_73"
             threshold: "$(arg threshold)"
             modality: "$(arg modality)"
         </rosparam>
