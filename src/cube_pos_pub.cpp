@@ -36,25 +36,43 @@ public:
     }
 
     void client_connect_to_ros(){
-        XmlRpc::XmlRpcValue glob_params;
+//        XmlRpc::XmlRpcValue glob_params;
         XmlRpc::XmlRpcValue exp_params;
 
-        cafer_core::ros_nh->getParam("/dream_babbling/params", glob_params);
+//        cafer_core::ros_nh->getParam("/", glob_params);
         cafer_core::ros_nh->getParam("experiment", exp_params);
 
         _load_exp = static_cast<std::string>(exp_params["soi"]["load_exp"]);
         _threshold = std::stod(exp_params["soi"]["threshold"]);
         _modality = static_cast<std::string>(exp_params["soi"]["modality"]);
 
-        _rgbd_sub.reset(new rgbd_utils::RGBD_Subscriber(glob_params["rgb_info_topic"],
-                glob_params["rgb_topic"],
-                glob_params["depth_info_topic"],
-                glob_params["depth_topic"],
+        //* Output the values of all parameters
+        std::stringstream display_params;
+//        for (auto& param:glob_params) {
+//            display_params << "\t" << param.first << ":\t" << param.second << std::endl;
+//        }
+        for (auto& param:exp_params) {
+            display_params << "\t" << param.first << ":\t" << param.second << std::endl;
+        }
+        ROS_INFO_STREAM(" Global parameters retrieved:" << std::endl << display_params.str());
+        //*/
+
+
+        _rgbd_sub.reset(new rgbd_utils::RGBD_Subscriber("/camera/rgb/camera_info",
+                "/camera/rgb/image_raw",
+                "/camera/depth_registered/camera_info",
+               "/camera/depth_registered/image_raw",
                 *ros_nh));
 
         _position_pub.reset(
                     new ros::Publisher(
                         ros_nh->advertise<geometry_msgs::Point>("cube_position",5)));
+
+        _sm_pub.reset(
+                    new ros::Publisher(
+                        ros_nh->advertise<sensor_msgs::PointCloud2>("saliency_map",5)));
+        _segment_pub.reset(
+                    new ros::Publisher(ros_nh->advertise<sensor_msgs::PointCloud2>("segment",5)));
 
         _update_workspace();
 
@@ -64,6 +82,8 @@ public:
     void client_disconnect_from_ros(){
         _rgbd_sub.reset();
         _position_pub.reset();
+        _sm_pub.reset();
+        _segment_pub.reset();
     }
 
     void update(){
@@ -89,7 +109,7 @@ public:
         }
 
         compute_saliency_map(input_cloud);
-        find_center_object();
+//        find_center_object();
         _position_pub->publish(_position_msg);
 
     }
@@ -132,6 +152,12 @@ public:
            _soi.compute_weights<iagmm::NNMap>(classifier.first,classifier.second);
         }
 
+        ip::PointCloudT sm_cloud = _soi.getColoredWeightedCloud(_modality);
+        sensor_msgs::PointCloud2 sm_cloud_msg;
+        pcl::toROSMsg(sm_cloud,sm_cloud_msg);
+        sm_cloud_msg.header = _rgbd_sub->get_depth().header;
+        _sm_pub->publish(sm_cloud_msg);
+
         return true;
     }
 
@@ -163,6 +189,9 @@ private:
     double _threshold;
     geometry_msgs::Point _position_msg;
     std::unique_ptr<ip::workspace_t> _workspace;
+
+    std::unique_ptr<Publisher> _sm_pub;
+    std::unique_ptr<Publisher> _segment_pub;
 
     iagmm::TrainingData _load_dataset(const std::string& filename)
     {
