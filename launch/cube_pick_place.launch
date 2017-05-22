@@ -2,6 +2,9 @@
   
   <param name="approach_distance" value="0.1"/>
   <param name="retract_distance" value="0.15"/>
+  <param name="Roll" value="0"/>
+  <param name="Pitch" value="1.70"/>
+  <param name="Yaw" value="0.0"/>
 
   <!--node name="cube_pick_place_node" pkg="cube_pick_place" type="cube_pick_place" output="screen" launch-prefix="gdb -ex run -remove-args"/-->
   <node name="cube_pick_place_node" pkg="cube_pick_place" type="cube_pick_place" output="screen"/> 
