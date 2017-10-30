@@ -1,0 +1,13 @@
+<launch>
+  
+  <rosparam command="load" file="$(find cube_pick_place)/launch/params/planner_params.yml" ns="planner_parameters"/>
+
+ <!--  <node name="crustcrawler_pick_place_node" pkg="cube_pick_place" type="crustcrawler_pick_place" output="screen" launch-prefix="terminator -x gdb -r-args">
+  	<remap from="/joint_states" to="/crustcrawler/joint_states"/>
+  </node> -->
+
+  <node name="crustcrawler_pick_place_node" pkg="cube_pick_place" type="crustcrawler_pick_place" output="screen">
+  	<remap from="/joint_states" to="/crustcrawler/joint_states"/>
+  </node>
+
+</launch>

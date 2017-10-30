@@ -4,6 +4,8 @@ project(cube_pick_place)
 find_package(catkin REQUIRED COMPONENTS
   crustcrawler_core_msgs
   crustcrawler_mover_utils
+  pr2_mover_utils
+  baxter_mover_utils
   moveit_ros_planning_interface
   roscpp
   rospy
@@ -40,8 +42,17 @@ include_directories(
 add_executable(cube_pick_place src/cube_pick_place.cpp)
 target_link_libraries(cube_pick_place ${catkin_LIBRARIES})
 
+add_executable(baxter_pick_place src/baxter_pick_place.cpp)
+target_link_libraries(baxter_pick_place ${catkin_LIBRARIES})
+
+add_executable(crustcrawler_pick_place src/crustcrawler_pick_place.cpp)
+target_link_libraries(crustcrawler_pick_place ${catkin_LIBRARIES})
+
+add_executable(moveit_pick_place_tests src/moveit_pick_place_tests.cpp)
+target_link_libraries(moveit_pick_place_tests ${catkin_LIBRARIES})
+
 add_executable(get_rpy src/get_rpy.cpp)
 target_link_libraries(get_rpy ${catkin_LIBRARIES})
 
-add_executable(cube_pos_pub src/cube_pos_pub.cpp)
-target_link_libraries(cube_pos_pub ${catkin_LIBRARIES} ${PCL_LIBRARIES}  image_processing yaml-cpp.so iagmm)
+#add_executable(cube_pos_pub src/cube_pos_pub.cpp)
+#target_link_libraries(cube_pos_pub ${catkin_LIBRARIES} ${PCL_LIBRARIES}  image_processing yaml-cpp.so iagmm)
