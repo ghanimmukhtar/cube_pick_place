@@ -48,189 +48,199 @@ static const std::string ROBOT_DESCRIPTION="robot_description";
 using namespace crustcrawler_mover;
 
 bool pick(moveit::planning_interface::MoveGroup &group)
-{
-  std::vector<moveit_msgs::Grasp> grasps;
+    {
+        std::vector<moveit_msgs::Grasp> grasps;
 
-  geometry_msgs::PoseStamped p;
-  p.header.frame_id = "base";
-  p.pose.position.x = 0.3;
-  p.pose.position.y = -0.1;
-  p.pose.position.z = 0.07;
-  p.pose.orientation.x = 0;
-  p.pose.orientation.y = 1;
-  p.pose.orientation.z = 0;
-  p.pose.orientation.w = 0;
-  moveit_msgs::Grasp g;
-  g.grasp_pose = p;
+        geometry_msgs::PoseStamped p;
+        p.header.frame_id = "base";
+        p.pose.position.x = 0.3;
+        p.pose.position.y = -0.1;
+        p.pose.position.z = 0.0;
+        p.pose.orientation.x = 0;
+        p.pose.orientation.y = 1;
+        p.pose.orientation.z = 0;
+        p.pose.orientation.w = 0;
+        moveit_msgs::Grasp g;
+        g.grasp_pose = p;
 
-  g.pre_grasp_approach.direction.vector.z = 1.0;
-  g.pre_grasp_approach.direction.header.frame_id = "the_gripper";
-  g.pre_grasp_approach.min_distance = 0.05;
-  g.pre_grasp_approach.desired_distance = 0.1;
+        g.pre_grasp_approach.direction.vector.z = 1.0;
+        g.pre_grasp_approach.direction.header.frame_id = "link_gripper_base";
+        g.pre_grasp_approach.min_distance = 0.05;
+        g.pre_grasp_approach.desired_distance = 0.1;
 
-  g.post_grasp_retreat.direction.header.frame_id = "base";
-  g.post_grasp_retreat.direction.vector.x = 1.0;
-  g.post_grasp_retreat.min_distance = 0.1;
-  g.post_grasp_retreat.desired_distance = 0.05;
+        g.post_grasp_retreat.direction.header.frame_id = "base";
+        g.post_grasp_retreat.direction.vector.x = 1.0;
+        g.post_grasp_retreat.min_distance = 0.1;
+        g.post_grasp_retreat.desired_distance = 0.05;
 
-  g.pre_grasp_posture.joint_names.resize(2);
-  g.pre_grasp_posture.joint_names[0] = "left_finger_joint";
-  g.pre_grasp_posture.joint_names[1] = "right_finger_joint";
-  g.pre_grasp_posture.points.resize(1);
-  g.pre_grasp_posture.points[0].positions.resize(2);
-  g.pre_grasp_posture.points[0].positions[0] = -0.84;
-  g.pre_grasp_posture.points[0].positions[1] = 0.84;
+        g.pre_grasp_posture.joint_names.resize(2);
+        g.pre_grasp_posture.joint_names[0] = "left_finger_joint";
+        g.pre_grasp_posture.joint_names[1] = "right_finger_joint";
+        g.pre_grasp_posture.points.resize(1);
+        g.pre_grasp_posture.points[0].positions.resize(2);
+        g.pre_grasp_posture.points[0].positions[0] = -0.84;
+        g.pre_grasp_posture.points[0].positions[1] = 0.84;
 
-  g.grasp_posture.joint_names.resize(2);
-  g.grasp_posture.joint_names[0] = "left_finger_joint";
-  g.grasp_posture.joint_names[1] = "right_finger_joint";
-  g.grasp_posture.points.resize(1);
-  g.grasp_posture.points[0].positions.resize(2);
-  g.grasp_posture.points[0].positions[0] = -0.84;
-  g.grasp_posture.points[0].positions[1] = 0.84;
+        g.grasp_posture.joint_names.resize(2);
+        g.grasp_posture.joint_names[0] = "left_finger_joint";
+        g.grasp_posture.joint_names[1] = "right_finger_joint";
+        g.grasp_posture.points.resize(1);
+        g.grasp_posture.points[0].positions.resize(2);
+        g.grasp_posture.points[0].positions[0] = -0.84;
+        g.grasp_posture.points[0].positions[1] = 0.84;
 
-  grasps.push_back(g);
-  group.setSupportSurfaceName("table");
-  return group.pick("part", grasps);
-}
+        grasps.push_back(g);
+        group.setSupportSurfaceName("table");
+        return group.pick("part", grasps);
+    }
 
 bool place(moveit::planning_interface::MoveGroup &group)
-{
-  std::vector<moveit_msgs::PlaceLocation> loc;
+    {
+        std::vector<moveit_msgs::PlaceLocation> loc;
 
-  geometry_msgs::PoseStamped p;
-  p.header.frame_id = "base";
-  p.pose.position.x = 0.4;
-  p.pose.position.y = 0.0;
-  p.pose.position.z = 0.07;
-  p.pose.orientation.x = 0;
-  p.pose.orientation.y = 1;
-  p.pose.orientation.z = 0;
-  p.pose.orientation.w = 0;
-  moveit_msgs::PlaceLocation g;
-  g.place_pose = p;
+        geometry_msgs::PoseStamped p;
+        p.header.frame_id = "base";
+        p.pose.position.x = 0.4;
+        p.pose.position.y = 0.0;
+        p.pose.position.z = 0.07;
+        p.pose.orientation.x = 0;
+        p.pose.orientation.y = 1;
+        p.pose.orientation.z = 0;
+        p.pose.orientation.w = 0;
+        moveit_msgs::PlaceLocation g;
+        g.place_pose = p;
 
-  g.pre_place_approach.direction.vector.x = -1.0;
-  g.post_place_retreat.direction.vector.z = -1.0;
-  g.post_place_retreat.direction.header.frame_id = "base";
-  g.pre_place_approach.direction.header.frame_id = "the_gripper";
-  g.pre_place_approach.min_distance = 0.05;
-  g.pre_place_approach.desired_distance = 0.1;
-  g.post_place_retreat.min_distance = 0.05;
-  g.post_place_retreat.desired_distance = 0.1;
+        g.pre_place_approach.direction.vector.x = -1.0;
+        g.post_place_retreat.direction.vector.z = -1.0;
+        g.post_place_retreat.direction.header.frame_id = "base";
+        g.pre_place_approach.direction.header.frame_id = "link_gripper_base";
+        g.pre_place_approach.min_distance = 0.05;
+        g.pre_place_approach.desired_distance = 0.1;
+        g.post_place_retreat.min_distance = 0.05;
+        g.post_place_retreat.desired_distance = 0.1;
 
-  g.post_place_posture.joint_names.resize(2);
-  g.post_place_posture.joint_names[0] = "left_finger_joint";
-  g.post_place_posture.joint_names[1] = "right_finger_joint";
-  g.post_place_posture.points.resize(1);
-  g.post_place_posture.points[0].positions.resize(2);
-  g.post_place_posture.points[0].positions[0] = 0;
-  g.post_place_posture.points[0].positions[1] = 0;
+        g.post_place_posture.joint_names.resize(2);
+        g.post_place_posture.joint_names[0] = "left_finger_joint";
+        g.post_place_posture.joint_names[1] = "right_finger_joint";
+        g.post_place_posture.points.resize(1);
+        g.post_place_posture.points[0].positions.resize(2);
+        g.post_place_posture.points[0].positions[0] = 0;
+        g.post_place_posture.points[0].positions[1] = 0;
 
-  loc.push_back(g);
-  group.setSupportSurfaceName("table");
+        loc.push_back(g);
+        group.setSupportSurfaceName("table");
 
 
-  // add path constraints
-  moveit_msgs::Constraints constr;
-  constr.orientation_constraints.resize(1);
-  moveit_msgs::OrientationConstraint &ocm = constr.orientation_constraints[0];
-  ocm.link_name = "link_gripper_base";
-  ocm.header.frame_id = p.header.frame_id;
-  ocm.orientation.x = 0.0;
-  ocm.orientation.y = 0.0;
-  ocm.orientation.z = 0.0;
-  ocm.orientation.w = 1.0;
-  ocm.absolute_x_axis_tolerance = 0.2;
-  ocm.absolute_y_axis_tolerance = 0.2;
-  ocm.absolute_z_axis_tolerance = M_PI;
-  ocm.weight = 1.0;
-  //  group.setPathConstraints(constr);
-  group.setPlannerId("RRTConnectkConfigDefault");
+        // add path constraints
+        moveit_msgs::Constraints constr;
+        constr.orientation_constraints.resize(1);
+        moveit_msgs::OrientationConstraint &ocm = constr.orientation_constraints[0];
+        ocm.link_name = "link_gripper_base";
+        ocm.header.frame_id = p.header.frame_id;
+        ocm.orientation.x = 0.0;
+        ocm.orientation.y = 0.0;
+        ocm.orientation.z = 0.0;
+        ocm.orientation.w = 1.0;
+        ocm.absolute_x_axis_tolerance = 0.2;
+        ocm.absolute_y_axis_tolerance = 0.2;
+        ocm.absolute_z_axis_tolerance = M_PI;
+        ocm.weight = 1.0;
+        //  group.setPathConstraints(constr);
+        group.setPlannerId("RRTConnectkConfigDefault");
 
-  return group.place("part", loc);
-}
+        return group.place("part", loc);
+    }
 
 int main(int argc, char **argv)
-{
-  ros::init (argc, argv, "arm_pick_place");
-  ros::AsyncSpinner spinner(1);
-  spinner.start();
+    {
+        ros::init (argc, argv, "arm_pick_place");
+        ros::AsyncSpinner spinner(1);
+        spinner.start();
 
-  ros::NodeHandle nh;
-  ros::Publisher pub_co = nh.advertise<moveit_msgs::CollisionObject>("collision_object", 10);
-  ros::Publisher pub_aco = nh.advertise<moveit_msgs::AttachedCollisionObject>("attached_collision_object", 10);
+        ros::NodeHandle nh;
+        ros::Publisher pub_co = nh.advertise<moveit_msgs::CollisionObject>("collision_object", 10);
+        ros::Publisher pub_aco = nh.advertise<moveit_msgs::AttachedCollisionObject>("attached_collision_object", 10);
 
-  ros::WallDuration(1.0).sleep();
+        ros::WallDuration(1.0).sleep();
 
-  CRUSTCRAWLER_Mover::Ptr crustcrawler_mover;
-  crustcrawler_mover.reset(new CRUSTCRAWLER_Mover(nh));
-  ROS_ERROR_STREAM("PLANNING FRAME IS : " << crustcrawler_mover->group->getPlanningFrame());
+//        moveit::planning_interface::MoveGroup group("arm");
+//        group.setPlanningTime(45.0);
+//        group.setPlannerId("RRTConnectkConfigDefault");
 
-  moveit_msgs::CollisionObject co;
-  co.header.stamp = ros::Time::now();
-  co.header.frame_id = "base";
+        CRUSTCRAWLER_Mover::Ptr crustcrawler_mover;
+        crustcrawler_mover.reset(new CRUSTCRAWLER_Mover(nh));
+
+        crustcrawler_mover->group->setPlanningTime(45.0);
+        crustcrawler_mover->group->setPlannerId("RRTConnectkConfigDefault");
+
+        ROS_ERROR_STREAM("PLANNING FRAME IS : " << crustcrawler_mover->group->getPlanningFrame());
+        ROS_ERROR_STREAM("EEF IS : " << crustcrawler_mover->group->getEndEffectorLink());
+
+        moveit_msgs::CollisionObject co;
+        co.header.stamp = ros::Time::now();
+        co.header.frame_id = "base";
 
 
-  co.primitives.resize(1);
-  co.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
-  co.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
-  co.primitive_poses.resize(1);
-
-
-
-  // remove table
-  co.id = "table";
-  co.operation = moveit_msgs::CollisionObject::REMOVE;
-  pub_co.publish(co);
-
-  // add table
-  //co.operation = moveit_msgs::CollisionObject::ADD;
-  co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.5;
-  co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 1.5;
-  co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.2;
-  co.primitive_poses[0].position.x = 0.4;
-  co.primitive_poses[0].position.y = -0.2;
-  co.primitive_poses[0].position.z = 0.0;
-  //pub_co.publish(co);
+        co.primitives.resize(1);
+        co.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+        co.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
+        co.primitive_poses.resize(1);
 
 
 
-  co.id = "part";
-  co.operation = moveit_msgs::CollisionObject::REMOVE;
-  pub_co.publish(co);
+        // remove table
+        co.id = "table";
+        co.operation = moveit_msgs::CollisionObject::REMOVE;
+        pub_co.publish(co);
 
-  moveit_msgs::AttachedCollisionObject aco;
-  aco.object = co;
-  pub_aco.publish(aco);
+        // add table
+        //co.operation = moveit_msgs::CollisionObject::ADD;
+        co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.5;
+        co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 1.5;
+        co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.2;
+        co.primitive_poses[0].position.x = 0.4;
+        co.primitive_poses[0].position.y = -0.2;
+        co.primitive_poses[0].position.z = 0.0;
+        //pub_co.publish(co);
 
-  co.operation = moveit_msgs::CollisionObject::ADD;
-  co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.03;
-  co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 0.03;
-  co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.03;
 
-  co.primitive_poses[0].position.x = 0.3;
-  co.primitive_poses[0].position.y = -0.1;
-  co.primitive_poses[0].position.z = 0.0;
-  pub_co.publish(co);
 
-  // wait a bit for ros things to initialize
-  ros::WallDuration(1.0).sleep();
+        co.id = "part";
+        co.operation = moveit_msgs::CollisionObject::REMOVE;
+        pub_co.publish(co);
 
-  int iteration = 0;
-  while (!pick(*crustcrawler_mover->group) && iteration < 10){
-          ros::WallDuration(1.0).sleep();
-          iteration++;
-      }
+        moveit_msgs::AttachedCollisionObject aco;
+        aco.object = co;
+        pub_aco.publish(aco);
 
-  ros::WallDuration(1.0).sleep();
+        co.operation = moveit_msgs::CollisionObject::ADD;
+        co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.03;
+        co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 0.03;
+        co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.03;
 
-  iteration = 0;
-  while (!place(*crustcrawler_mover->group) && iteration < 10){
-          ros::WallDuration(1.0).sleep();
-          iteration++;
-      }
+        co.primitive_poses[0].position.x = 0.3;
+        co.primitive_poses[0].position.y = -0.1;
+        co.primitive_poses[0].position.z = 0.0;
+        pub_co.publish(co);
 
-  ros::waitForShutdown();
-  return 0;
-}
+        // wait a bit for ros things to initialize
+        ros::WallDuration(1.0).sleep();
+
+        //pick(group);
+        int iteration = 0;
+        while (!pick(*crustcrawler_mover->group) && iteration < 10){
+                ros::WallDuration(1.0).sleep();
+                iteration++;
+            }
+
+        //  ros::WallDuration(1.0).sleep();
+
+        //  iteration = 0;
+        //  while (!place(*crustcrawler_mover->group) && iteration < 10){
+        //          ros::WallDuration(1.0).sleep();
+        //          iteration++;
+        //      }
+
+        //  ros::waitForShutdown();
+        return 0;
+    }
