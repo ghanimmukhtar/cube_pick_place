@@ -42,6 +42,9 @@ include_directories(
 add_executable(cube_pick_place src/cube_pick_place.cpp)
 target_link_libraries(cube_pick_place ${catkin_LIBRARIES})
 
+add_executable(pick_and_place_python src/pick_and_place_python.cpp)
+target_link_libraries(pick_and_place_python ${catkin_LIBRARIES})
+
 add_executable(baxter_pick_place src/baxter_pick_place.cpp)
 target_link_libraries(baxter_pick_place ${catkin_LIBRARIES})
 
