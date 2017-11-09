@@ -18,6 +18,17 @@ find_package(catkin REQUIRED COMPONENTS
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fPIC")
 
+add_message_files(
+        FILES
+        pick_place_pose.msg
+)
+
+generate_messages(
+        DEPENDENCIES
+        std_msgs
+        geometry_msgs
+)
+
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 
@@ -44,6 +55,9 @@ target_link_libraries(cube_pick_place ${catkin_LIBRARIES})
 
 add_executable(pick_and_place_python src/pick_and_place_python.cpp)
 target_link_libraries(pick_and_place_python ${catkin_LIBRARIES})
+
+add_executable(pick_and_place_pose src/pick_and_place_pose.cpp)
+target_link_libraries(pick_and_place_pose ${catkin_LIBRARIES})
 
 add_executable(baxter_pick_place src/baxter_pick_place.cpp)
 target_link_libraries(baxter_pick_place ${catkin_LIBRARIES})

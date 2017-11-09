@@ -18,6 +18,7 @@
 #include <moveit_msgs/PlaceLocation.h>
 
 #include <crustcrawler_mover_utils/crustcrawler_mover.hpp>
+#include <cube_pick_place/pick_place_pose.h>
 
 using namespace moveit_simple_grasps;
 using namespace moveit_msgs;
@@ -27,6 +28,7 @@ using namespace ros;
 using namespace std;
 using namespace actionlib;
 using namespace crustcrawler_mover;
+using namespace shape_msgs;
 
 class Pick_Place{
     public:
@@ -50,12 +52,15 @@ class Pick_Place{
 
                 WallDuration(1.0).sleep();
 
+                //Create subscribers for the pick pose and place pose
+                _pickup_place_pose_sub = _node.subscribe<cube_pick_place::pick_place_pose>("pick_place_pose", 10, &Pick_Place::pick_and_place_cb, this);
+
                 //Create (debugging) publishers:
                 _grasps_pub = _node.advertise<PoseArray>("grasps", true);
                 _places_pub = _node.advertise<PoseArray>("places", true);
 
-                _pub_co = _node.advertise<CollisionObject>("collision_object", 10);
-                _pub_aco = _node.advertise<AttachedCollisionObject>("attached_collision_object", 10);
+                _pub_co = _node.advertise<CollisionObject>("collision_object", true);
+                _pub_aco = _node.advertise<AttachedCollisionObject>("attached_collision_object", true);
 
                 _crustcrawler_mover.reset(new CRUSTCRAWLER_Mover(_node));
                 //_robot.reset(new MoveGroup(_arm_group));
@@ -63,23 +68,8 @@ class Pick_Place{
                 //Clean the scene:
                 remove_world_object(_table_object_name);
                 remove_world_object(_grasp_object_name);
+                remove_world_object(_collision_object.id);
 
-                //Add table and Coke can objects to the planning scene:
-                _pose_table = add_table(_table_object_name);
-                _pose_coke_can = add_grasp_block(_grasp_object_name);
-
-                WallDuration(1.0).sleep();
-
-                //Define target place pose:
-                _pose_place.position.x = _pose_coke_can.position.x;
-                _pose_place.position.y = _pose_coke_can.position.y - 0.06;
-                _pose_place.position.z = _pose_coke_can.position.z;
-
-                _q.setEuler(0.0, 0.0, 0.0);
-                _pose_place.orientation.w = _q.getW();
-                _pose_place.orientation.x = _q.getX();
-                _pose_place.orientation.y = _q.getY();
-                _pose_place.orientation.z = _q.getZ();
 
                 //Retrieve groups (arm and gripper):
                 _arm = _crustcrawler_mover->group->getName();
@@ -109,25 +99,123 @@ class Pick_Place{
                         return;
                     }
 
-                //Pick Coke can object:
-                while(!pickup(_arm_group, _grasp_object_name)){
-                        ROS_WARN("Pick up failed! Retrying ...");
-                        WallDuration(1.0).sleep();
-                    }
+                //Preparation for partial removal of the octomap later on
+                _collision_object.header.frame_id = _crustcrawler_mover->group->getPlanningFrame();
+                _collision_object.id = "box1";
+                _primitive.type = _primitive.BOX;
+                _primitive.dimensions.resize(3);
+                _primitive.dimensions[0] = 0.1;
+                _primitive.dimensions[1] = 0.1;
+                _primitive.dimensions[2] = 0.1;
+                _box_pose.position.x =  0.;
+                _box_pose.position.y =  0.;
+                _box_pose.position.z =  0.;
 
-                ROS_INFO("Pick up successfully");
+                _collision_object.primitives.push_back(_primitive);
+                _collision_object.primitive_poses.push_back(_box_pose);
+                _collision_object.operation = _collision_object.ADD;
 
-                //Place Coke can object on another place on the support surface (table):
-                while(!place(_arm_group, _grasp_object_name, _pose_place)){
-                        ROS_WARN("Place failed! Retrying ...");
-                        WallDuration(1.0).sleep();
-                    }
-
-                ROS_INFO("Place successfully");
+                ROS_INFO("Add an object into the world");
+                _my_scene.world.collision_objects.push_back(_collision_object);
+                _my_scene.is_diff = true;
+                _crustcrawler_mover->publish_psm_msg(_my_scene);
             }
+
         ~Pick_Place(){
 
             }
+
+        void pick_and_place_cb(const cube_pick_place::pick_place_poseConstPtr& pick_place_topic){
+                _picked = false;
+                _placed = false;
+                remove_world_object(_table_object_name);
+                remove_world_object(_grasp_object_name);
+                WallDuration(1.0).sleep();
+                if(pick_place_topic->pick_pose.empty() || pick_place_topic->place_pose.empty()){
+                        ROS_ERROR("please fill the pick pose as well as the place pose, otherwise this wouldn't work");
+                        return;
+                    }
+                int pick_number_trials = 0, place_number_trials = 0, max_trials = 1;
+                //Add table and Coke can objects to the planning scene:
+                _pose_table = add_table(_table_object_name);
+                _pose_coke_can = add_grasp_block(_grasp_object_name, pick_place_topic->pick_pose);
+
+                WallDuration(1.0).sleep();
+
+                //Define target place pose:
+                _pose_place.position.x = pick_place_topic->place_pose[0].x;
+                _pose_place.position.y = pick_place_topic->place_pose[0].y;
+                _pose_place.position.z = pick_place_topic->place_pose[0].z;
+
+                _box_pose.position.x = pick_place_topic->pick_pose[0].x;
+                _box_pose.position.y = pick_place_topic->pick_pose[0].y;
+                _box_pose.position.z = pick_place_topic->pick_pose[0].z;
+
+                _q.setEuler(0.0, 0.0, 0.0);
+                _pose_place.orientation.w = _q.getW();
+                _pose_place.orientation.x = _q.getX();
+                _pose_place.orientation.y = _q.getY();
+                _pose_place.orientation.z = _q.getZ();
+
+                _collision_object.primitive_poses.clear();
+                _collision_object.primitive_poses.push_back(_box_pose);
+
+                _my_scene.world.collision_objects.clear();
+                _my_scene.world.collision_objects.push_back(_collision_object);
+                _my_scene.is_diff = true;
+                _crustcrawler_mover->publish_psm_msg(_my_scene);
+
+                _crustcrawler_mover->global_parameters.set_adding_octomap_to_acm(false);
+                _crustcrawler_mover->call_service_get_ps();
+                _crustcrawler_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_names.push_back("box1");
+                _crustcrawler_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_values.push_back(true);
+                _crustcrawler_mover->publish_psm_msg();
+
+                //Pick Coke can object:
+                while(!pickup(_arm_group, _grasp_object_name) && pick_number_trials < max_trials){
+                        ROS_WARN("Pick up failed! Retrying ...");
+                        WallDuration(1.0).sleep();
+                        pick_number_trials++;
+                    }
+
+                if(!_picked){
+                        ROS_ERROR("Pickup Total Failure !");
+                        return;
+                    }
+
+                remove_world_object(_table_object_name);
+                _box_pose.position.x = _pose_place.position.x;
+                _box_pose.position.y = _pose_place.position.y;
+                _box_pose.position.z = _pose_place.position.z;
+
+                _collision_object.primitive_poses.clear();
+                _collision_object.primitive_poses.push_back(_box_pose);
+
+                _my_scene.world.collision_objects.clear();
+                _my_scene.world.collision_objects.push_back(_collision_object);
+                _my_scene.is_diff = true;
+                _crustcrawler_mover->publish_psm_msg(_my_scene);
+
+                _crustcrawler_mover->global_parameters.set_adding_octomap_to_acm(false);
+                _crustcrawler_mover->call_service_get_ps();
+                _crustcrawler_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_names.push_back("box1");
+                _crustcrawler_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_values.push_back(true);
+                _crustcrawler_mover->publish_psm_msg();
+                WallDuration(1.0).sleep();
+
+                //Place Coke can object on another place on the support surface (table):
+                while(!place(_arm_group, _grasp_object_name, _pose_place) && place_number_trials < max_trials){
+                        ROS_WARN("Place failed! Retrying ...");
+                        WallDuration(1.0).sleep();
+                        place_number_trials++;
+                    }
+
+                _crustcrawler_mover->group->detachObject(_grasp_object_name);
+                remove_world_object(_collision_object.id);
+                remove_world_object(_grasp_object_name);
+                WallDuration(1.0).sleep();
+            }
+
 
         GenerateGraspsResultConstPtr generate_grasps(Pose pose, double width){
                 /* *
@@ -248,14 +336,15 @@ class Pick_Place{
                 _pub_co.publish(_co);
             }
 
+
         Pose add_table(string table_name){
                 PoseStamped p;
                 p.header.frame_id = _crustcrawler_mover->group->getPlanningFrame();
                 p.header.stamp = Time::now();
 
-                p.pose.position.x = 0.45;
+                p.pose.position.x = 0.2;
                 p.pose.position.y = 0.0;
-                p.pose.position.z = 0.22;
+                p.pose.position.z = 0.0;
                 _q.setEuler(0.0, 0.0, M_PI/2);
                 p.pose.orientation.w = _q.getW();
                 p.pose.orientation.x = _q.getX();
@@ -273,7 +362,7 @@ class Pick_Place{
                 _co.id = table_name;
                 _co.operation = CollisionObject::ADD;
                 _co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.5;
-                _co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 0.4;
+                _co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 1.5;
                 _co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.02;
 
                 _co.primitive_poses[0].position = p.pose.position;
@@ -282,14 +371,14 @@ class Pick_Place{
                 return p.pose;
             }
 
-        Pose add_grasp_block(string object_name){
+        Pose add_grasp_block(string object_name, vector<Point> target_pose){
                 PoseStamped p;
                 p.header.frame_id = _crustcrawler_mover->group->getPlanningFrame();
                 p.header.stamp = Time::now();
 
-                p.pose.position.x = 0.25;
-                p.pose.position.y = 0.05;
-                p.pose.position.z = 0.32;
+                p.pose.position.x = target_pose[0].x;
+                p.pose.position.y = target_pose[0].y;
+                p.pose.position.z = target_pose[0].z;
                 _q.setEuler(0.0, 0.0, 0.0);
                 p.pose.orientation.w = _q.getW();
                 p.pose.orientation.x = _q.getX();
@@ -339,6 +428,8 @@ class Pick_Place{
                         ROS_WARN_STREAM("Group" << group << " cannot pick up target " << target << "!:");
                         return false;
                     }
+                ROS_INFO("Pick up successfully");
+                _picked = true;
                 return true;
             }
 
@@ -355,7 +446,7 @@ class Pick_Place{
 
                 if(_place_ac->sendGoalAndWait(goal) != SimpleClientGoalState::SUCCEEDED){
                         ROS_ERROR_STREAM("Place goal failed!: " << _place_ac->getState().getText());
-                        return NULL;
+                        return false;
                     }
 
                 PlaceResultConstPtr result = _place_ac->getResult();
@@ -366,6 +457,8 @@ class Pick_Place{
                         return false;
                     }
 
+                ROS_INFO("Place successfully");
+                _placed = true;
                 return true;
             }
 
@@ -424,16 +517,23 @@ class Pick_Place{
         NodeHandle _node;
         string _table_object_name = "Grasp_Table", _grasp_object_name = "Grasp_Object", _arm_group = "arm", _gripper_group = "gripper", _arm, _gripper;
         double _grasp_object_width = 0.01, _approach_retreat_desired_dist = 0.1, _approach_retreat_min_dist = 0.05;
+        bool _picked = false, _placed = false;
         tf::Quaternion _q;
 
         Publisher _grasps_pub, _places_pub, _pub_co, _pub_aco;
+        Subscriber _pickup_place_pose_sub;
         shared_ptr<SimpleActionClient<GenerateGraspsAction>> _grasp_ac;
         shared_ptr<SimpleActionClient<PickupAction>> _pickup_ac;
         shared_ptr<SimpleActionClient<PlaceAction>> _place_ac;
         shared_ptr<moveit::planning_interface::MoveGroup> _robot;
         CRUSTCRAWLER_Mover::Ptr _crustcrawler_mover;
+
         XmlRpc::XmlRpcValue _parameters;
-        CollisionObject _co;
+        CollisionObject _co, _collision_object;
+        SolidPrimitive _primitive;
+        Pose _box_pose;
+        PlanningScene _my_scene;
+
         AttachedCollisionObject _aco;
         Pose _pose_table, _pose_coke_can, _pose_place;
     };
@@ -446,6 +546,7 @@ int main(int argc, char **argv)
 
         Pick_Place pick_place_arm;
 
+        ros::waitForShutdown();
 
         return 0;
     }
