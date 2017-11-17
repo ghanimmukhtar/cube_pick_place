@@ -17,6 +17,9 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "globals.h"
+
+
 
 using namespace cafer_core;
 namespace ip = image_processing;
@@ -26,18 +29,31 @@ class CubePosition : public Component{
 
 public:
     void init(){
-        _nnmap_class.emplace("color",iagmm::NNMap(3,2,.3,0.05));
-        _nnmap_class.emplace("normal",iagmm::NNMap(3,2,.3,0.05));
+        //Init workspace (with existing parameters on the parameters server).
+        _update_workspace();
+
+        //* init the attributes
+
+        _soi.init<babbling::sv_param>();
+        _is_init = true;
+
+        //*/
+
 
         client_connect_to_ros();
 
-        load_experiment();
-
+        if(_soi_method == "nnmap"){
+            for(const auto& mod : _modalities)
+                _nnmap_class.emplace(mod.first,iagmm::NNMap(mod.second,2,.3,0.05));
+            load_experiment();
+        }
     }
 
     void client_connect_to_ros(){
 //        XmlRpc::XmlRpcValue glob_params;
         XmlRpc::XmlRpcValue exp_params;
+        XmlRpc::XmlRpcValue modalities;
+        XmlRpc::XmlRpcValue moda;
 
 //        cafer_core::ros_nh->getParam("/", glob_params);
         cafer_core::ros_nh->getParam("experiment", exp_params);
@@ -45,6 +61,12 @@ public:
         _load_exp = static_cast<std::string>(exp_params["soi"]["load_exp"]);
         _threshold = std::stod(exp_params["soi"]["threshold"]);
         _modality = static_cast<std::string>(exp_params["soi"]["modality"]);
+        cafer_core::ros_nh->getParam("modalities",modalities);
+
+        for(const auto& mod: modalities){
+            moda = mod.second;
+            _modalities.emplace(static_cast<std::string>(moda["name"]),moda["dimension"]);
+        }
 
         //* Output the values of all parameters
         std::stringstream display_params;
@@ -57,11 +79,12 @@ public:
         ROS_INFO_STREAM(" Global parameters retrieved:" << std::endl << display_params.str());
         //*/
 
+        _soi_method = static_cast<std::string>(exp_params["soi"]["method"]);
 
-        _rgbd_sub.reset(new rgbd_utils::RGBD_Subscriber("/camera/rgb/camera_info",
-                "/camera/rgb/image_raw",
-                "/camera/depth_registered/camera_info",
-               "/camera/depth_registered/image_raw",
+        _rgbd_sub.reset(new rgbd_utils::RGBD_Subscriber("/kinect2/qhd/camera_info",
+                "/kinect2/qhd/image_color",
+                "/kinect2/qhd/camera_info",
+               "/kinect2/qhd/image_depth_rect",
                 *ros_nh));
 
         _position_pub.reset(
@@ -120,6 +143,7 @@ public:
 
     }
 
+
     bool load_experiment(){
         std::cout << "load : " << _load_exp << std::endl;
         if(_load_exp.empty())
@@ -128,6 +152,7 @@ public:
         boost::filesystem::directory_iterator end_it;
         std::vector<std::string> split_str;
         std::string type;
+        std::map<std::string,std::string> gmm_arch_file;
         std::map<std::string,std::string> dataset_file;
 
         for(;dir_it != end_it; ++dir_it){
@@ -136,15 +161,53 @@ public:
             type = split_str[0];
             boost::split(split_str,split_str.back(),boost::is_any_of("."));
 
-            if(type == "dataset")
-                dataset_file.emplace(split_str[0],dir_it->path().string());
+
+
+            for(const auto& mod : _modalities){
+                if(split_str[0] == mod.first)
+                {
+                    if(type == "gmm" && (_soi_method == "gmm" || _soi_method == "mcs"))
+                        gmm_arch_file.emplace(split_str[0],dir_it->path().string());
+                    if(type == "dataset")
+                        dataset_file.emplace(split_str[0],dir_it->path().string());
+                }
+            }
         }
+
 
         for(const auto& file : dataset_file){
             iagmm::TrainingData data = _load_dataset(file.second);
-            _nnmap_class[file.first].set_samples(data);
+                _nnmap_class[file.first].set_samples(data);
+
         }
+        return true;
     }
+
+//    bool load_experiment(){
+//        std::cout << "load : " << _load_exp << std::endl;
+//        if(_load_exp.empty())
+//            return false;
+//        boost::filesystem::directory_iterator dir_it(_load_exp);
+//        boost::filesystem::directory_iterator end_it;
+//        std::vector<std::string> split_str;
+//        std::string type;
+//        std::map<std::string,std::string> dataset_file;
+
+//        for(;dir_it != end_it; ++dir_it){
+//            boost::split(split_str,dir_it->path().string(),boost::is_any_of("/"));
+//            boost::split(split_str,split_str.back(),boost::is_any_of("_"));
+//            type = split_str[0];
+//            boost::split(split_str,split_str.back(),boost::is_any_of("."));
+
+//            if(type == "dataset")
+//                dataset_file.emplace(split_str[0],dir_it->path().string());
+//        }
+
+//        for(const auto& file : dataset_file){
+//            iagmm::TrainingData data = _load_dataset(file.second);
+//            _nnmap_class[file.first].set_samples(data);
+//        }
+//    }
 
     bool compute_saliency_map(const ip::PointCloudT::Ptr input_cloud){
         _soi.clear();
@@ -190,7 +253,8 @@ private:
     ip::SurfaceOfInterest _soi;
     std::map<std::string,iagmm::NNMap> _nnmap_class;
     std::string _load_exp;
-    std::string _modality;
+    std::string _soi_method, _modality;
+    std::map<std::string,int> _modalities;
     double _threshold;
     geometry_msgs::Point _position_msg;
     std::unique_ptr<ip::workspace_t> _workspace;
@@ -225,6 +289,34 @@ private:
         }
         return dataset;
     }
+
+//    iagmm::TrainingData _load_dataset(const std::string& filename)
+//    {
+//        iagmm::TrainingData dataset;
+
+//        YAML::Node fileNode = YAML::LoadFile(filename);
+//        if (fileNode.IsNull()) {
+//            ROS_ERROR("File not found.");
+//            return dataset;
+//        }
+
+//        YAML::Node features = fileNode["frame_0"]["features"];
+
+
+//        for (unsigned int i = 0; i < features.size(); ++i) {
+//            std::stringstream stream;
+//            stream << "feature_" << i;
+//            YAML::Node tmp_node = features[stream.str()];
+
+//            Eigen::VectorXd feature(tmp_node["value"].size());
+//            for(size_t i = 0; i < tmp_node["value"].size(); ++i)
+//                feature(i) = tmp_node["value"][i].as<double>();
+
+
+//            dataset.add(tmp_node["label"].as<int>(),feature);
+//        }
+//        return dataset;
+//    }
 
     void _update_workspace()
     {

@@ -1,11 +1,12 @@
-#include <crustcrawler_mover_utils/crustcrawler_mover_utils/crustcrawler_mover.hpp>
+#include <crustcrawler_mover_utils/crustcrawler_mover.hpp>
 #include <crustcrawler_mover_utils/move_crustcrawler_arm.h>
-#include <crustcrawler_mover_utils/crustcrawler_mover_utils/parameters.hpp>
+#include <crustcrawler_mover_utils/parameters.hpp>
 #include <crustcrawler_core_msgs/EndEffectorCommand.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <tf/transform_listener.h>
+#include <shape_tools/solid_primitive_dims.h>
 
 using namespace crustcrawler_mover;
 
@@ -15,78 +16,66 @@ public:
         init();
     }
 
-    //Convert object position from camera frame to robot frame
-    void tf_base_conversion(Eigen::Vector3d& object_pose_in_robot_frame, Eigen::Vector3d& object_pose_in_camera_frame){
-        tf::TransformListener listener;
-        tf::StampedTransform stamped_transform;
-        //std::string child_frame = "/camera_depth_optical_frame";
-        std::string child_frame = "/camera_rgb_optical_frame";
-        std::string parent_frame = "base";
-        try{
-            listener.lookupTransform(child_frame, parent_frame,
-                                     ros::Time::now(), stamped_transform);
-        }
-        catch (tf::TransformException &ex) {
-            ROS_ERROR("%s",ex.what());
-            ros::Duration(1.0).sleep();
-        }
+    void define_collision_object(){
+        double cube_side = 0.055;
 
-        geometry_msgs::PointStamped camera_point;
-        geometry_msgs::PointStamped base_point;
-        camera_point.header.frame_id = child_frame;
-
-        //we'll just use the most recent transform available for our simple example
-        camera_point.header.stamp = ros::Time();
-
-        //just an arbitrary point in space
-        camera_point.point.x = object_pose_in_camera_frame(0);
-        camera_point.point.y = object_pose_in_camera_frame(1);
-        camera_point.point.z = object_pose_in_camera_frame(2);
-
-        try{
-
-            listener.transformPoint(parent_frame, camera_point, base_point);
-
-            ROS_INFO("camera_depth_optical_frame: (%.2f, %.2f. %.2f) -----> base_link: (%.2f, %.2f, %.2f) at time %.2f",
-                     camera_point.point.x, camera_point.point.y, camera_point.point.z,
-                     base_point.point.x, base_point.point.y, base_point.point.z, base_point.header.stamp.toSec());
-        }
-        catch(tf::TransformException& ex){
-            ROS_ERROR("Received an exception trying to transform a point from \"base_laser\" to \"base_link\": %s", ex.what());
-        }
-        object_pose_in_robot_frame << base_point.point.x,
-                base_point.point.y,
-                base_point.point.z;
+        _co.header.stamp = ros::Time::now();
+        _co.header.frame_id = "base";
+        _co.id = "testbox";
+        _co.primitives.resize(1);
+        _co.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+        _co.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
+        _co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = cube_side;
+        _co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = cube_side;
+        _co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = cube_side;
+        _co.primitive_poses.resize(1);
+        _co.primitive_poses[0].position.x = _box_x;
+        _co.primitive_poses[0].position.y = _box_y;
+        _co.primitive_poses[0].position.z = _box_z;
+        _co.primitive_poses[0].orientation.w = 1.0;
     }
-    void cube_position_cb(const geometry_msgs::Point::ConstPtr& cube_position){
-        _cube_position_camera_frame(0) = cube_position->x;
-        _cube_position_camera_frame(1) = cube_position->y;
-        _cube_position_camera_frame(2) = cube_position->z;
-        tf_base_conversion(_cube_position_robot_frame, _cube_position_camera_frame);
-    }
+
 
     Eigen::Vector3d get_cube_position(){
-        return _cube_position_robot_frame;
+
+        _my_scene = _crustcrawler_mover->global_parameters.get_ps_msg();
+
+        ROS_INFO("Add an object into the world");
+        _my_scene.world.collision_objects.push_back(_co);
+        _my_scene.is_diff = true;
+        _crustcrawler_mover->publish_psm_msg(_my_scene);
+
+        _crustcrawler_mover->call_service_get_ps();
+        _crustcrawler_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_names.push_back("testbox");
+        _crustcrawler_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_values.push_back(true);
+        _crustcrawler_mover->publish_psm_msg();
+
+        ros::WallDuration(1.0).sleep();
+
+
+        Eigen::Vector3d position;
+        position << _box_x, _box_y, _box_z;
+        return position;
     }
 
     void init(){
         _crustcrawler_mover.reset(new CRUSTCRAWLER_Mover(_node));
         _gripper_command_publisher.reset(new ros::Publisher(_node.advertise<crustcrawler_core_msgs::EndEffectorCommand>
                                                             ("/crustcrawler/end_effector/gripper/command", 1, this)));
-        _cube_position_sub = _node.subscribe<geometry_msgs::Point>("/cube_pos_pub/cube_position", 1, &Cube_picker_placer::cube_position_cb, this);
+        _joint_state_sub = _node.subscribe<sensor_msgs::JointState>("/crustcrawler/joint_states", 1,  &Cube_picker_placer::jostateCallback, this);
 
-        _crustcrawler_mover->group->setPlannerId("PRMstarkConfigDefault");
-        _crustcrawler_mover->group->setPlanningTime(5);
+        //_crustcrawler_mover->group->setPlannerId("PRMstarkConfigDefault");
+        //_crustcrawler_mover->group->setPlanningTime(5);
         //first go to home
         _home_variable_values.insert ( std::pair<std::string, double>("joint_1", -1.3) );
-        _home_variable_values.insert ( std::pair<std::string, double>("joint_2",  0.3) );
+        _home_variable_values.insert ( std::pair<std::string, double>("joint_2", -0.3) );
         _home_variable_values.insert ( std::pair<std::string, double>("joint_3", -1.1) );
         _home_variable_values.insert ( std::pair<std::string, double>("joint_4",  0.0) );
         _home_variable_values.insert ( std::pair<std::string, double>("joint_5", -0.5) );
         _home_variable_values.insert ( std::pair<std::string, double>("joint_6",  0.0) );
 
         _arranged_joints_positions = std::vector<double>(6,0);
-        _home_joints_position = {-1.3, 0.3, -1.1, 0.0, -0.5, 0.0};
+        _home_joints_position = {-1.3, -0.3, -1.1, 0.0, -0.5, 0.0};
 
         if(!_node.getParam("/approach_distance", _approach_distance))
             _approach_distance = 0.12;
@@ -100,6 +89,9 @@ public:
             _yaw = M_PI/2;
         if(!_node.getParam("/option", _option))
             _option = false;
+
+
+        define_collision_object();
 
         ros::AsyncSpinner my_spinner(4);
         my_spinner.start();
@@ -119,13 +111,30 @@ public:
         _gripper_command.command = "go";
         _gripper_command_publisher->publish(_gripper_command);
     }
-    void fill_arranged_joint_position(){
-        _arranged_joints_positions[0] = _crustcrawler_mover->global_parameters.get_joint_state().position[7];
-        _arranged_joints_positions[1] = _crustcrawler_mover->global_parameters.get_joint_state().position[5];
-        _arranged_joints_positions[2] = _crustcrawler_mover->global_parameters.get_joint_state().position[6];
-        _arranged_joints_positions[3] = _crustcrawler_mover->global_parameters.get_joint_state().position[3];
-        _arranged_joints_positions[4] = _crustcrawler_mover->global_parameters.get_joint_state().position[4];
-        _arranged_joints_positions[5] = _crustcrawler_mover->global_parameters.get_joint_state().position[2];
+    void jostateCallback(const sensor_msgs::JointState::ConstPtr& jo_state)
+    {
+
+        _arranged_joints_positions[0] = jo_state->position[distance(jo_state->name.begin(), find(jo_state->name.begin(),
+                                                                                                 jo_state->name.end(),
+                                                                                                 _crustcrawler_mover->global_parameters.get_crustcrawler_arm_joints_names()[0]))];
+        _arranged_joints_positions[1] = jo_state->position[distance(jo_state->name.begin(), find(jo_state->name.begin(),
+                                                                                                 jo_state->name.end(),
+                                                                                                 _crustcrawler_mover->global_parameters.get_crustcrawler_arm_joints_names()[1]))];
+        _arranged_joints_positions[2] = jo_state->position[distance(jo_state->name.begin(), find(jo_state->name.begin(),
+                                                                                                 jo_state->name.end(),
+                                                                                                 _crustcrawler_mover->global_parameters.get_crustcrawler_arm_joints_names()[2]))];
+        _arranged_joints_positions[3] = jo_state->position[distance(jo_state->name.begin(), find(jo_state->name.begin(),
+                                                                                                 jo_state->name.end(),
+                                                                                                 _crustcrawler_mover->global_parameters.get_crustcrawler_arm_joints_names()[3]))];
+        _arranged_joints_positions[4] = jo_state->position[distance(jo_state->name.begin(), find(jo_state->name.begin(),
+                                                                                                 jo_state->name.end(),
+                                                                                                 _crustcrawler_mover->global_parameters.get_crustcrawler_arm_joints_names()[4]))];
+        _arranged_joints_positions[5] = jo_state->position[distance(jo_state->name.begin(), find(jo_state->name.begin(),
+                                                                                                 jo_state->name.end(),
+                                                                                                 _crustcrawler_mover->global_parameters.get_crustcrawler_arm_joints_names()[5]))];
+
+        //ROS_INFO_STREAM("OCTOMAP PARTIAL : joint states call back, first joint value is: " << _arranged_joints_positions[0]);
+        //ROS_WARN("*******************************************");
     }
 
     //get largest difference between elements of two vectors
@@ -142,11 +151,22 @@ public:
     }
 
     bool go_home(){
-        _crustcrawler_mover->group->setJointValueTarget(_home_variable_values);
-        if(_crustcrawler_mover->group->plan(_group_plan))
-            _crustcrawler_mover->group->execute(_group_plan);
-        fill_arranged_joint_position();
-        if(largest_difference(_arranged_joints_positions, _home_joints_position) < 0.1)
+        int32_t back_home = 0;
+        if(largest_difference(_home_joints_position,
+                              _arranged_joints_positions) > 0.15){
+            _crustcrawler_mover->group->setStartState(*_crustcrawler_mover->group->getCurrentState());
+
+            _crustcrawler_mover->group->setJointValueTarget(_home_variable_values);
+
+            if(_crustcrawler_mover->group->plan(_group_plan)){
+                back_home = _crustcrawler_mover->group->execute(_group_plan);
+                _crustcrawler_mover->group->setStartState(*_crustcrawler_mover->group->getCurrentState());
+            }
+        }
+        else
+            //I am already at home
+            back_home = 1;
+        if(back_home == 1)
             return true;
         else
             return false;
@@ -197,73 +217,41 @@ public:
     bool pick_object(Eigen::Vector3d goal){
         open_gripper();
 
-        tf::Quaternion quat_nagles;
-        //double pitch = 0, step = 0.1;
-        //ROS_WARN_STREAM("planning for angle : " << atan2(goal(1), goal(0)));
-        if(_option)
-            quat_nagles.setRPY(atan2(goal(1), goal(0)),  _pitch, _yaw);
-        else
-            quat_nagles.setRPY(_roll,  _pitch, atan2(goal(1), goal(0)));
-        geometry_msgs::PoseStamped goal_pose;
-        goal_pose.header.frame_id = "/world";
-        goal_pose.pose.position.x = goal(0);
-        goal_pose.pose.position.y = goal(1);
-        goal_pose.pose.position.z = goal(2);
-        goal_pose.pose.orientation.w = quat_nagles.getW();
-        goal_pose.pose.orientation.x = quat_nagles.getX();
-        goal_pose.pose.orientation.y = quat_nagles.getY();
-        goal_pose.pose.orientation.z = quat_nagles.getZ();
-
-        double step = 0.1;
-        int iteration = 0;
-        //_crustcrawler_mover->group->setPositionTarget(goal(0), goal(1), goal(2));
-        _crustcrawler_mover->group->setPoseTarget(goal_pose);
-        while(!_crustcrawler_mover->group->plan(_group_plan) && iteration < 10){
-            quat_nagles.setRPY(_roll, _pitch, atan2(goal(1), goal(0)));
-            goal_pose.pose.orientation.w = quat_nagles.getW();
-            goal_pose.pose.orientation.x = quat_nagles.getX();
-            goal_pose.pose.orientation.y = quat_nagles.getY();
-            goal_pose.pose.orientation.z = quat_nagles.getZ();
-            _crustcrawler_mover->group->setPoseTarget(goal_pose);
-            _pitch = _pitch + step;
-            iteration+=1;
-        }
+        _crustcrawler_mover->group->setPositionTarget(goal(0), goal(1), goal(2));
         if(_crustcrawler_mover->group->plan(_group_plan))
             if(_crustcrawler_mover->group->execute(_group_plan)){
-                close_gripper();
-                return true;
-            }
-            else
-                return false;
-        else
-            return false;
-        /*
-        //construct two points vector to plan for straight line motion with open gripper
-        _waypoints.clear();
-        _waypoints.push_back(_crustcrawler_mover->global_parameters.get_eef_pose());
-        _waypoints.push_back(_crustcrawler_mover->global_parameters.get_eef_pose());
-        _waypoints[1].position.x = goal(0);
-        _waypoints[1].position.y = goal(1);
-        _waypoints[1].position.z = goal(2);
 
-        double fraction = _crustcrawler_mover->group->computeCartesianPath(_waypoints, 0.025, 0.0, _robot_trajectory);
-        if(fraction == 1){
-            _group_plan.trajectory_ = _robot_trajectory;
-            if(_crustcrawler_mover->group->execute(_group_plan)){
                 close_gripper();
                 return true;
             }
-            else
-                return false;
-        }
-        else
-            return false;*/
+        return false;
     }
 
     bool retract(){
+        _crustcrawler_mover->group->setStartState(*_crustcrawler_mover->group->getCurrentState());
+
+        std::vector<geometry_msgs::Pose> waypoints;
+        geometry_msgs::Pose poses;
+        moveit_msgs::RobotTrajectory robot_trajectory;
+        double fraction;
+
+        poses = _crustcrawler_mover->group->getCurrentPose().pose;
+        waypoints.push_back(poses);
+        poses.position.z += _retract_distance;
+        waypoints.push_back(poses);
+
+        fraction = _crustcrawler_mover->group->computeCartesianPath(waypoints, 0.01, 0.0, robot_trajectory);
+
+        if(fraction > 0.6){
+            ROS_WARN("CONTROLLER : Found plan to retract, going up some distant");
+            _retract_plan.trajectory_ = robot_trajectory;
+            if(_crustcrawler_mover->group->execute(_retract_plan))
+                return true;
+        }
+
         _crustcrawler_mover->group->setPositionTarget(_crustcrawler_mover->global_parameters.get_eef_pose().position.x,
                                                       _crustcrawler_mover->global_parameters.get_eef_pose().position.y,
-                                                      _crustcrawler_mover->global_parameters.get_eef_pose().position.z + _approach_distance);
+                                                      _crustcrawler_mover->global_parameters.get_eef_pose().position.z + _retract_distance);
         if(_crustcrawler_mover->group->plan(_group_plan))
             if(_crustcrawler_mover->group->execute(_group_plan))
                 return true;
@@ -290,6 +278,7 @@ public:
     }
 
     bool drop_object(Eigen::Vector3d goal){
+        _crustcrawler_mover->group->setStartState(*_crustcrawler_mover->group->getCurrentState());
         _crustcrawler_mover->group->setPositionTarget(goal(0), goal(1), goal(2));
         if(_crustcrawler_mover->group->plan(_group_plan))
             if(_crustcrawler_mover->group->execute(_group_plan)){
@@ -306,16 +295,21 @@ public:
 
 private:
     ros::NodeHandle _node;
-    ros::Subscriber _cube_position_sub;
+    ros::Subscriber _cube_position_sub, _joint_state_sub;
+    moveit_msgs::PlanningScene _my_scene;
+    moveit_msgs::CollisionObject _co;
     std::shared_ptr<ros::Publisher> _gripper_command_publisher;
     CRUSTCRAWLER_Mover::Ptr _crustcrawler_mover;
     std::map<std::string, double> _home_variable_values;
     std::vector<double> _arranged_joints_positions, _home_joints_position;
-    moveit::planning_interface::MoveGroup::Plan _group_plan;
+    moveit::planning_interface::MoveGroup::Plan _group_plan, _retract_plan;
     crustcrawler_core_msgs::EndEffectorCommand _gripper_command;
     std::vector<geometry_msgs::Pose> _waypoints;
     moveit_msgs::RobotTrajectory _robot_trajectory;
     double _approach_distance, _retract_distance, _roll, _pitch, _yaw;
+    double _box_x = 0.4;
+    double _box_y = 0.0;
+    double _box_z = 0.06;
     Eigen::Vector3d _cube_position_camera_frame, _cube_position_robot_frame;
     bool _option;
 };
@@ -332,6 +326,7 @@ int main(int argc, char **argv)
     Eigen::Vector3d goal;
 
     Eigen::Vector3d drop_point(0.2, 0.26, 0.2);
+    //int iterations = 0;
     while(ros::ok()){
         pick_place_arm.open_gripper();
         pick_place_arm.go_home();
@@ -346,19 +341,20 @@ int main(int argc, char **argv)
             break;
         }
 
-        if(pick_place_arm.approach(goal))
-            if(pick_place_arm.pick_object(goal))
-                if(pick_place_arm.retract())
-                    if(pick_place_arm.drop_object(drop_point))
-                        ROS_INFO("Hurray!! all process is a success");
-                    else
-                        ROS_WARN("The dropping didn't succeed :(:(:(:(");
+
+        if(pick_place_arm.pick_object(goal)){
+            usleep(3e6);
+            if(pick_place_arm.retract())
+                if(pick_place_arm.drop_object(drop_point))
+                    ROS_INFO("Hurray!! all process is a success");
                 else
-                    ROS_WARN("The retraction didn't succeed :(:(:(:(");
+                    ROS_WARN("The dropping didn't succeed :(:(:(:(");
             else
-                ROS_WARN("The picking didn't succeed :(:(:(:(");
+                ROS_WARN("The retraction didn't succeed :(:(:(:(");
+        }
         else
-            ROS_WARN("The approaching didn't succeed :(:(:(:(");
+            ROS_WARN("The picking didn't succeed :(:(:(:(");
+
         ROS_INFO("This iteration has finished please, enter position and press enter for the next ...");
         //std::cin >> x, y, z;
         //goal(0) = x;

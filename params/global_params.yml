@@ -13,10 +13,11 @@
 
 management_topic: "/management_topic"
 
-rgb_topic: "/camera/rgb/image_raw"
-depth_topic: "/camera/depth_registered/image_raw"
-rgb_info_topic: "/camera/rgb/camera_info"
-depth_info_topic: "/camera/depth_registered/camera_info"
+rgb_topic: "/kinect2/qhd/image_color"
+depth_topic: "/kinect2/qhd/image_depth_rect"
+rgb_info_topic: "/kinect2/qhd/camera_info"
+depth_info_topic: "/kinect2/qhd/camera_info"
+cloud_topic: "/kinect2/qhd/points"
 
 motion_detector_topic: "/dream_babbling/motion_detector_node"
 motion_detector_service: "/dream_babbling/motion_detector_node/is_moving"
@@ -31,4 +32,3 @@ dataset_topic_normal: "/dream_babbling/babbling_node/dataset/normal"
 
 gmm_topic_color : "/dream_babbling/babbling_node/gmm/color"
 gmm_topic_normal : "/dream_babbling/babbling_node/gmm/normal"
-

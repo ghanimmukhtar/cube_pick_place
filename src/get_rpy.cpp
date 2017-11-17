@@ -1,6 +1,6 @@
-#include <crustcrawler_mover_utils/crustcrawler_mover_utils/crustcrawler_mover.hpp>
+#include <crustcrawler_mover_utils/crustcrawler_mover.hpp>
 #include <crustcrawler_mover_utils/move_crustcrawler_arm.h>
-#include <crustcrawler_mover_utils/crustcrawler_mover_utils/parameters.hpp>
+#include <crustcrawler_mover_utils/parameters.hpp>
 #include <crustcrawler_core_msgs/EndpointState.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>

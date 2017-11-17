@@ -1,0 +1,6 @@
+<launch>  
+  <rosparam command="load" file="$(find cube_pick_place)/launch/params/global_params.yml" ns="planner_parameters"/>
+
+  <!-- <node name="cube_pick_place_node" pkg="cube_pick_place" type="calvin_pick_n_place" output="screen" args="joint_states:=/crustcrawler/joint_states" launch-prefix="gdb -ex run -r-args"/> -->
+  <node name="cube_pick_place_node" pkg="cube_pick_place" type="calvin_pick_n_place" output="screen" args="joint_states:=/robot/joint_states"/> 
+</launch>
