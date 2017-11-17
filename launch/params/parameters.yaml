@@ -1,0 +1,7 @@
+table_object_name: "Grasp_Table"
+grasp_object_name: "Grasp_Object"
+grasp_object_width: "0.01"
+arm: "arm"
+gripper: "gripper"
+approach_retreat_desired_dist: "0.2"
+approach_retreat_min_dist: "0.1"

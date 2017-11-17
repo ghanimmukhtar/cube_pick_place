@@ -21,6 +21,18 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fPIC")
 
 find_package(PkgConfig)
 pkg_search_module(Eigen3 REQUIRED eigen3)
+
+add_message_files(
+        FILES
+        pick_place_pose.msg
+)
+
+generate_messages(
+        DEPENDENCIES
+        std_msgs
+        geometry_msgs
+)
+
 find_package(PCL 1.7 REQUIRED)
 
 find_path(RGBD_UTILS_INCLUDE_DIR rgbd_utils/rgbd_subscriber.hpp)
@@ -47,6 +59,21 @@ include_directories(
 
 add_executable(cube_pick_place src/cube_pick_place.cpp)
 target_link_libraries(cube_pick_place ${catkin_LIBRARIES})
+
+add_executable(pick_and_place_python src/pick_and_place_python.cpp)
+target_link_libraries(pick_and_place_python ${catkin_LIBRARIES})
+
+add_executable(pick_and_place_pose src/pick_and_place_pose.cpp)
+target_link_libraries(pick_and_place_pose ${catkin_LIBRARIES})
+
+add_executable(baxter_pick_place src/baxter_pick_place.cpp)
+target_link_libraries(baxter_pick_place ${catkin_LIBRARIES})
+
+add_executable(crustcrawler_pick_place src/crustcrawler_pick_place.cpp)
+target_link_libraries(crustcrawler_pick_place ${catkin_LIBRARIES})
+
+add_executable(moveit_pick_place_tests src/moveit_pick_place_tests.cpp)
+target_link_libraries(moveit_pick_place_tests ${catkin_LIBRARIES})
 
 add_executable(get_rpy src/get_rpy.cpp)
 target_link_libraries(get_rpy ${catkin_LIBRARIES})
