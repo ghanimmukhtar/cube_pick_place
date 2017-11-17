@@ -3,7 +3,7 @@
 	<rosparam command="load" file="$(find cube_pick_place)/launch/params/parameters.yaml"/>
 	<!-- <node name="pick_place_node_python" pkg="cube_pick_place" type="pick_and_place_python" output="screen" launch-prefix="terminator -x gdb -r-args"> -->
     <node pkg="cube_pick_place" type="pick_and_place_python" name="pick_and_place_node" output="screen">
-  	  <remap from="/joint_states" to="/crustcrawler/joint_states"/>
+  	  <remap from="/joint_states" to="/robot/joint_states"/>
     </node>
 
 
