@@ -53,7 +53,7 @@ void pick(moveit::planning_interface::MoveGroup &group)
 
   geometry_msgs::PoseStamped p;
   p.header.frame_id = "base";
-  p.pose.position.x = 0.5;
+  p.pose.position.x = 0.6;
   p.pose.position.y = -0.4;
   p.pose.position.z = 0.0;
   p.pose.orientation.x = 0;
@@ -69,7 +69,7 @@ void pick(moveit::planning_interface::MoveGroup &group)
   g.pre_grasp_approach.desired_distance = 0.4;
 
   g.post_grasp_retreat.direction.header.frame_id = "base";
-  g.post_grasp_retreat.direction.vector.x = 1.0;
+  g.post_grasp_retreat.direction.vector.x = -1.0;
   g.post_grasp_retreat.min_distance = 0.1;
   g.post_grasp_retreat.desired_distance = 0.25;
 
@@ -86,8 +86,8 @@ void pick(moveit::planning_interface::MoveGroup &group)
   g.grasp_posture.joint_names[1] = "r_gripper_r_finger_joint";
   g.grasp_posture.points.resize(1);
   g.grasp_posture.points[0].positions.resize(2);
-  g.grasp_posture.points[0].positions[0] = 0.02;
-  g.grasp_posture.points[0].positions[1] = -0.02;
+  g.grasp_posture.points[0].positions[0] = 0.0;
+  g.grasp_posture.points[0].positions[1] = 0.0;
 
   grasps.push_back(g);
   group.setSupportSurfaceName("table");
@@ -100,7 +100,7 @@ void place(moveit::planning_interface::MoveGroup &group)
 
   geometry_msgs::PoseStamped p;
   p.header.frame_id = "base";
-  p.pose.position.x = 0.7;
+  p.pose.position.x = 0.6;
   p.pose.position.y = 0.0;
   p.pose.position.z = 0.0;
   p.pose.orientation.x = 0;
@@ -110,10 +110,11 @@ void place(moveit::planning_interface::MoveGroup &group)
   moveit_msgs::PlaceLocation g;
   g.place_pose = p;
 
-  g.pre_place_approach.direction.vector.x = -1.0;
-  g.post_place_retreat.direction.vector.z = -1.0;
-  g.post_place_retreat.direction.header.frame_id = "base";
+
+  g.post_place_retreat.direction.header.frame_id = "right_gripper";
   g.pre_place_approach.direction.header.frame_id = "right_gripper";
+  g.pre_place_approach.direction.vector.x = 1.0;
+  g.post_place_retreat.direction.vector.z = -1.0;
   g.pre_place_approach.min_distance = 0.1;
   g.pre_place_approach.desired_distance = 0.2;
   g.post_place_retreat.min_distance = 0.1;
@@ -124,8 +125,8 @@ void place(moveit::planning_interface::MoveGroup &group)
   g.post_place_posture.joint_names[1] = "r_gripper_r_finger_joint";
   g.post_place_posture.points.resize(1);
   g.post_place_posture.points[0].positions.resize(2);
-  g.post_place_posture.points[0].positions[0] = 0;
-  g.post_place_posture.points[0].positions[1] = 0;
+  g.post_place_posture.points[0].positions[0] = 0.02;
+  g.post_place_posture.points[0].positions[1] = -0.02;
 
   loc.push_back(g);
   group.setSupportSurfaceName("table");
@@ -135,7 +136,7 @@ void place(moveit::planning_interface::MoveGroup &group)
   moveit_msgs::Constraints constr;
   constr.orientation_constraints.resize(1);
   moveit_msgs::OrientationConstraint &ocm = constr.orientation_constraints[0];
-  ocm.link_name = "right_gripper_base";
+  ocm.link_name = "right_hand";
   ocm.header.frame_id = p.header.frame_id;
   ocm.orientation.x = 0.0;
   ocm.orientation.y = 0.0;
