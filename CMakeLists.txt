@@ -51,8 +51,8 @@ target_link_libraries(cube_pick_place ${catkin_LIBRARIES})
 add_executable(get_rpy src/get_rpy.cpp)
 target_link_libraries(get_rpy ${catkin_LIBRARIES})
 
-add_executable(cube_pos_pub src/cube_pos_pub.cpp)
-target_link_libraries(cube_pos_pub ${catkin_LIBRARIES} ${PCL_LIBRARIES}  image_processing yaml-cpp.so iagmm tbb)
+#add_executable(cube_pos_pub src/cube_pos_pub.cpp)
+#target_link_libraries(cube_pos_pub ${catkin_LIBRARIES} ${PCL_LIBRARIES}  image_processing yaml-cpp.so iagmm tbb)
 
 add_executable(calvin_pick_n_place src/calvin_pick_n_place.cpp)
 target_link_libraries(calvin_pick_n_place ${catkin_LIBRARIES} )
