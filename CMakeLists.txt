@@ -58,6 +58,9 @@ include_directories(
 add_executable(pick_and_place_baxter_python src/pick_and_place_baxter_python.cpp)
 target_link_libraries(pick_and_place_baxter_python ${catkin_LIBRARIES})
 
+add_executable(pick_and_place_pr2_python src/pick_and_place_pr2_python.cpp)
+target_link_libraries(pick_and_place_pr2_python ${catkin_LIBRARIES})
+
 add_executable(pick_and_place_crustcrawler_python src/pick_and_place_crustcrawler_python.cpp)
 target_link_libraries(pick_and_place_crustcrawler_python ${catkin_LIBRARIES})
 

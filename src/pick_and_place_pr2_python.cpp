@@ -17,7 +17,7 @@
 #include <moveit_msgs/PlaceAction.h>
 #include <moveit_msgs/PlaceLocation.h>
 
-#include <baxter_mover_utils/baxter_mover.hpp>
+#include <pr2_mover_utils/pr2_mover.hpp>
 #include <cube_pick_place/pick_place_pose.h>
 
 using namespace moveit_simple_grasps;
@@ -27,7 +27,7 @@ using namespace moveit::planning_interface;
 using namespace ros;
 using namespace std;
 using namespace actionlib;
-using namespace baxter_mover;
+using namespace pr2_mover;
 using namespace shape_msgs;
 
 class Pick_Place{
@@ -53,7 +53,7 @@ class Pick_Place{
                 WallDuration(1.0).sleep();
 
                 //Create subscribers for the pick pose and place pose
-                _pickup_place_pose_sub = _node.subscribe<cube_pick_place::pick_place_pose>("pick_place_pose", 10, &Pick_Place::pick_and_place_cb, this);
+                _pickup_place_pose_sub = _node.subscribe<cube_pick_place::pick_place_pose>("/pick_place_pose", 10, &Pick_Place::pick_and_place_cb, this);
 
                 //Create (debugging) publishers:
                 _grasps_pub = _node.advertise<PoseArray>("grasps", true);
@@ -62,10 +62,10 @@ class Pick_Place{
                 _pub_co = _node.advertise<CollisionObject>("collision_object", true);
                 _pub_aco = _node.advertise<AttachedCollisionObject>("attached_collision_object", true);
 
-                _baxter_mover.reset(new BAXTER_Mover(_node));
-                _baxter_mover->group->setPlannerId("RRTConnectkConfigDefault");
+                _pr2_mover.reset(new PR2_Mover(_node));
+                _pr2_mover->group->setPlannerId("RRTConnectkConfigDefault");
                 ROS_INFO("Trying to Print the Planning Frame");
-                ROS_WARN_STREAM("Planning frame is: " << _baxter_mover->group->getPlanningFrame());
+                ROS_WARN_STREAM("Planning frame is: " << _pr2_mover->group->getPlanningFrame());
 
                 //Clean the scene:
                 remove_world_object(_table_object_name);
@@ -74,8 +74,8 @@ class Pick_Place{
 
 
                 //Retrieve groups (arm and gripper):
-                _arm = _baxter_mover->group->getName();
-                _gripper = _baxter_mover->group->getEndEffector();
+                _arm = _pr2_mover->group->getName();
+                _gripper = _pr2_mover->group->getEndEffector();
 
                 //Create grasp generator 'generate' action client:
                 _grasp_ac.reset(new SimpleActionClient<GenerateGraspsAction>("/moveit_simple_grasps_server/generate", true));
@@ -86,7 +86,8 @@ class Pick_Place{
                     }
 
                 //Create move group 'pickup' action client:
-                _pickup_ac.reset(new SimpleActionClient<PickupAction>("/pickup", true));
+//                _pickup_ac.reset(new SimpleActionClient<PickupAction>("/pickup", true));
+                _pickup_ac.reset(new SimpleActionClient<PickupAction>("/dream_babbling/controller_node/pickup", true));
                 if(!_pickup_ac->waitForServer(Duration(5.0))){
                         ROS_ERROR("Pick up action client not available!");
                         shutdown();
@@ -94,7 +95,8 @@ class Pick_Place{
                     }
 
                 //Create move group 'place' action client:
-                _place_ac.reset(new SimpleActionClient<PlaceAction>("/place", true));
+//                _place_ac.reset(new SimpleActionClient<PlaceAction>("/place", true));
+                _place_ac.reset(new SimpleActionClient<PlaceAction>("/dream_babbling/controller_node/place", true));
                 if(!_place_ac->waitForServer(Duration(5.0))){
                         ROS_ERROR("Place action client not available!");
                         shutdown();
@@ -102,7 +104,7 @@ class Pick_Place{
                     }
 
                 //Preparation for partial removal of the octomap later on
-                _collision_object.header.frame_id = _baxter_mover->group->getPlanningFrame();
+                _collision_object.header.frame_id = _pr2_mover->group->getPlanningFrame();
                 _collision_object.id = "box1";
                 _primitive.type = _primitive.BOX;
                 _primitive.dimensions.resize(3);
@@ -120,7 +122,7 @@ class Pick_Place{
                 ROS_INFO("Add an object into the world");
                 _my_scene.world.collision_objects.push_back(_collision_object);
                 _my_scene.is_diff = true;
-                _baxter_mover->publish_psm_msg(_my_scene);
+                _pr2_mover->publish_psm_msg(_my_scene);
             }
 
         ~Pick_Place(){
@@ -165,13 +167,13 @@ class Pick_Place{
                 _my_scene.world.collision_objects.clear();
                 _my_scene.world.collision_objects.push_back(_collision_object);
                 _my_scene.is_diff = true;
-                _baxter_mover->publish_psm_msg(_my_scene);
+                _pr2_mover->publish_psm_msg(_my_scene);
 
-                _baxter_mover->global_parameters.set_adding_octomap_to_acm(false);
-                _baxter_mover->call_service_get_ps();
-                _baxter_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_names.push_back("box1");
-                _baxter_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_values.push_back(true);
-                _baxter_mover->publish_psm_msg();
+                _pr2_mover->global_parameters.set_adding_octomap_to_acm(false);
+                _pr2_mover->call_service_get_ps();
+                _pr2_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_names.push_back("box1");
+                _pr2_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_values.push_back(true);
+                _pr2_mover->publish_psm_msg();
 
                 //Pick Coke can object:
                 while(!pickup(_arm_group, _grasp_object_name) && pick_number_trials < max_trials){
@@ -196,13 +198,13 @@ class Pick_Place{
                 _my_scene.world.collision_objects.clear();
                 _my_scene.world.collision_objects.push_back(_collision_object);
                 _my_scene.is_diff = true;
-                _baxter_mover->publish_psm_msg(_my_scene);
+                _pr2_mover->publish_psm_msg(_my_scene);
 
-                _baxter_mover->global_parameters.set_adding_octomap_to_acm(false);
-                _baxter_mover->call_service_get_ps();
-                _baxter_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_names.push_back("box1");
-                _baxter_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_values.push_back(true);
-                _baxter_mover->publish_psm_msg();
+                _pr2_mover->global_parameters.set_adding_octomap_to_acm(false);
+                _pr2_mover->call_service_get_ps();
+                _pr2_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_names.push_back("box1");
+                _pr2_mover->global_parameters.get_ps_response().scene.allowed_collision_matrix.default_entry_values.push_back(true);
+                _pr2_mover->publish_psm_msg();
                 WallDuration(1.0).sleep();
 
                 //Place Coke can object on another place on the support surface (table):
@@ -212,7 +214,7 @@ class Pick_Place{
                         place_number_trials++;
                     }
 
-                _baxter_mover->group->detachObject(_grasp_object_name);
+                _pr2_mover->group->detachObject(_grasp_object_name);
                 remove_world_object(_collision_object.id);
                 remove_world_object(_grasp_object_name);
                 WallDuration(1.0).sleep();
@@ -255,7 +257,7 @@ class Pick_Place{
                 for (double angle = 0.0; angle < 2*M_PI; angle = angle + (1*M_PI/180)){
                         PlaceLocation place;
                         place.place_pose.header.stamp = Time::now();
-                        place.place_pose.header.frame_id = _baxter_mover->group->getPlanningFrame();
+                        place.place_pose.header.frame_id = _pr2_mover->group->getPlanningFrame();
 
                         //Set target position:
                         place.place_pose.pose = target;
@@ -272,7 +274,7 @@ class Pick_Place{
                         place.pre_place_approach.min_distance = _approach_retreat_min_dist;
 
                         place.pre_place_approach.direction.header.stamp = Time::now();
-                        place.pre_place_approach.direction.header.frame_id = _baxter_mover->group->getPlanningFrame();
+                        place.pre_place_approach.direction.header.frame_id = _pr2_mover->group->getPlanningFrame();
 
                         place.pre_place_approach.direction.vector.x = 0;
                         place.pre_place_approach.direction.vector.y = 0;
@@ -280,7 +282,7 @@ class Pick_Place{
 
                         //Generate post place approach:
                         place.post_place_retreat.direction.header.stamp = Time::now();
-                        place.post_place_retreat.direction.header.frame_id = _baxter_mover->group->getPlanningFrame();
+                        place.post_place_retreat.direction.header.frame_id = _pr2_mover->group->getPlanningFrame();
 
                         place.post_place_retreat.desired_distance = _approach_retreat_desired_dist;
                         place.post_place_retreat.min_distance = _approach_retreat_min_dist;
@@ -303,7 +305,7 @@ class Pick_Place{
                 //Publish grasps as poses, using a PoseArray message
                 if(_grasps_pub.getNumSubscribers() > 0){
                         PoseArray msg;
-                        msg.header.frame_id = _baxter_mover->group->getPlanningFrame();
+                        msg.header.frame_id = _pr2_mover->group->getPlanningFrame();
                         msg.header.stamp = Time::now();
 
                         for (size_t i = 0; i < grasps->grasps.size(); i++){
@@ -321,7 +323,7 @@ class Pick_Place{
 
                 if(_places_pub.getNumSubscribers() > 0){
                         PoseArray msg;
-                        msg.header.frame_id = _baxter_mover->group->getPlanningFrame();
+                        msg.header.frame_id = _pr2_mover->group->getPlanningFrame();
                         msg.header.stamp = Time::now();
 
                         for (size_t i = 0; i < places.size(); i++){
@@ -341,7 +343,7 @@ class Pick_Place{
 
         Pose add_table(string table_name){
                 PoseStamped p;/*
-                p.header.frame_id = _baxter_mover->group->getPlanningFrame();*/
+                p.header.frame_id = _pr2_mover->group->getPlanningFrame();*/
                 p.header.frame_id = "base";
                 p.header.stamp = Time::now();
 
@@ -355,7 +357,7 @@ class Pick_Place{
                 p.pose.orientation.z = _q.getZ();
 
                 _co.header.stamp = Time::now();
-                _co.header.frame_id = _baxter_mover->group->getPlanningFrame();
+                _co.header.frame_id = _pr2_mover->group->getPlanningFrame();
 
                 _co.primitives.resize(1);
                 _co.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
@@ -376,7 +378,7 @@ class Pick_Place{
 
         Pose add_grasp_block(string object_name, vector<Point> target_pose){
                 PoseStamped p;
-                //p.header.frame_id = _baxter_mover->group->getPlanningFrame();
+                //p.header.frame_id = _pr2_mover->group->getPlanningFrame();
                 p.header.frame_id = "base";
                 p.header.stamp = Time::now();
 
@@ -390,7 +392,7 @@ class Pick_Place{
                 p.pose.orientation.z = _q.getZ();
 
                 _co.header.stamp = Time::now();
-                _co.header.frame_id = _baxter_mover->group->getPlanningFrame();
+                _co.header.frame_id = _pr2_mover->group->getPlanningFrame();
 
                 _co.primitives.resize(1);
                 _co.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
@@ -530,7 +532,7 @@ class Pick_Place{
         shared_ptr<SimpleActionClient<PickupAction>> _pickup_ac;
         shared_ptr<SimpleActionClient<PlaceAction>> _place_ac;
         shared_ptr<moveit::planning_interface::MoveGroup> _robot;
-        BAXTER_Mover::Ptr _baxter_mover;
+        PR2_Mover::Ptr _pr2_mover;
 
         XmlRpc::XmlRpcValue _parameters;
         CollisionObject _co, _collision_object;
