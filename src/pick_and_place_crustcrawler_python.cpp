@@ -207,11 +207,11 @@ class Pick_Place{
                 WallDuration(1.0).sleep();
 
                 //Place Coke can object on another place on the support surface (table):
-                while(!place(_arm_group, _grasp_object_name, _pose_place) && place_number_trials < max_trials){
-                        ROS_WARN("Place failed! Retrying ...");
-                        WallDuration(1.0).sleep();
-                        place_number_trials++;
-                    }
+                //while(!place(_arm_group, _grasp_object_name, _pose_place) && place_number_trials < max_trials){
+                  //      ROS_WARN("Place failed! Retrying ...");
+                    //    WallDuration(1.0).sleep();
+                      //  place_number_trials++;
+                    //}
 
                 _crustcrawler_mover->group->detachObject(_grasp_object_name);
                 remove_world_object(_collision_object.id);
@@ -233,12 +233,12 @@ class Pick_Place{
 
                 GraspGeneratorOptions options;
                 //simple_graps.cpp doesn't implement GRASP_AXIS_Z!
-                //options.grasp_axis      = GraspGeneratorOptions.GRASP_AXIS_Z
+                //options.grasp_axis      = GraspGeneratorOptions::GRASP_AXIS_Z;
                 options.grasp_direction = GraspGeneratorOptions::GRASP_DIRECTION_UP;
                 options.grasp_rotation = GraspGeneratorOptions::GRASP_ROTATION_FULL;
 
                 //@todo disabled because it works better with the default options
-                //goal.options.append(options)
+                goal.options.push_back(options);
 
                 //Send goal and wait for result:
                 if(_grasp_ac->sendGoalAndWait(goal) != SimpleClientGoalState::SUCCEEDED){
