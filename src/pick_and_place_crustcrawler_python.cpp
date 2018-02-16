@@ -207,11 +207,11 @@ class Pick_Place{
                 WallDuration(1.0).sleep();
 
                 //Place Coke can object on another place on the support surface (table):
-                //while(!place(_arm_group, _grasp_object_name, _pose_place) && place_number_trials < max_trials){
-                  //      ROS_WARN("Place failed! Retrying ...");
-                    //    WallDuration(1.0).sleep();
-                      //  place_number_trials++;
-                    //}
+                while(!place(_arm_group, _grasp_object_name, _pose_place) && place_number_trials < max_trials){
+                        ROS_WARN("Place failed! Retrying ...");
+                        WallDuration(1.0).sleep();
+                        place_number_trials++;
+                    }
 
                 _crustcrawler_mover->group->detachObject(_grasp_object_name);
                 remove_world_object(_collision_object.id);
