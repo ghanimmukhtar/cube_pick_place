@@ -239,12 +239,12 @@ class Pick_Place{
 
                 GraspGeneratorOptions options;
                 //simple_graps.cpp doesn't implement GRASP_AXIS_Z!
-                //options.grasp_axis      = GraspGeneratorOptions.GRASP_AXIS_Z
+                //options.grasp_axis      = GraspGeneratorOptions::GRASP_AXIS_Z;
                 options.grasp_direction = GraspGeneratorOptions::GRASP_DIRECTION_UP;
                 options.grasp_rotation = GraspGeneratorOptions::GRASP_ROTATION_FULL;
 
                 //@todo disabled because it works better with the default options
-                //goal.options.append(options)
+                goal.options.push_back(options);
 
                 //Send goal and wait for result:
                 if(_grasp_ac->sendGoalAndWait(goal) != SimpleClientGoalState::SUCCEEDED){
