@@ -55,24 +55,30 @@ bool pick(moveit::planning_interface::MoveGroup &group)
         p.header.frame_id = "base";
         p.pose.position.x = 0.3;
         p.pose.position.y = -0.1;
-        p.pose.position.z = 0.0;
+        p.pose.position.z = 0.04;
         p.pose.orientation.x = 0;
-        p.pose.orientation.y = 1;
+        p.pose.orientation.y = 0;
         p.pose.orientation.z = 0;
-        p.pose.orientation.w = 0;
+        p.pose.orientation.w = 1;
         moveit_msgs::Grasp g;
         g.grasp_pose = p;
 
-        g.pre_grasp_approach.direction.vector.z = 1.0;
-        g.pre_grasp_approach.direction.header.frame_id = "link_gripper_base";
+        g.pre_grasp_approach.direction.vector.z = -1;
+        g.pre_grasp_approach.direction.vector.x = 0;
+        g.pre_grasp_approach.direction.vector.y = 0;
+        g.pre_grasp_approach.direction.header.frame_id = "base";
         g.pre_grasp_approach.min_distance = 0.05;
         g.pre_grasp_approach.desired_distance = 0.1;
 
         g.post_grasp_retreat.direction.header.frame_id = "base";
-        g.post_grasp_retreat.direction.vector.x = 1.0;
+        g.post_grasp_retreat.direction.vector.x = 0;
+        g.post_grasp_retreat.direction.vector.y = 0;
+        g.post_grasp_retreat.direction.vector.z = 1;
         g.post_grasp_retreat.min_distance = 0.1;
         g.post_grasp_retreat.desired_distance = 0.05;
 
+        g.pre_grasp_posture.header.frame_id = "base";
+        g.pre_grasp_posture.header.stamp = ros::Time::now();
         g.pre_grasp_posture.joint_names.resize(2);
         g.pre_grasp_posture.joint_names[0] = "left_finger_joint";
         g.pre_grasp_posture.joint_names[1] = "right_finger_joint";
@@ -81,6 +87,8 @@ bool pick(moveit::planning_interface::MoveGroup &group)
         g.pre_grasp_posture.points[0].positions[0] = -0.84;
         g.pre_grasp_posture.points[0].positions[1] = 0.84;
 
+        g.grasp_posture.header.frame_id = "base";
+        g.grasp_posture.header.stamp = ros::Time::now();
         g.grasp_posture.joint_names.resize(2);
         g.grasp_posture.joint_names[0] = "left_finger_joint";
         g.grasp_posture.joint_names[1] = "right_finger_joint";
@@ -93,7 +101,7 @@ bool pick(moveit::planning_interface::MoveGroup &group)
         group.setSupportSurfaceName("table");
         return group.pick("part", grasps);
     }
-
+/*
 bool place(moveit::planning_interface::MoveGroup &group)
     {
         std::vector<moveit_msgs::PlaceLocation> loc;
@@ -113,7 +121,8 @@ bool place(moveit::planning_interface::MoveGroup &group)
         g.pre_place_approach.direction.vector.x = -1.0;
         g.post_place_retreat.direction.vector.z = -1.0;
         g.post_place_retreat.direction.header.frame_id = "base";
-        g.pre_place_approach.direction.header.frame_id = "link_gripper_base";
+        //g.pre_place_approach.direction.header.frame_id = "link_gripper_base";
+        g.pre_place_approach.direction.header.frame_id = "base";
         g.pre_place_approach.min_distance = 0.05;
         g.pre_place_approach.desired_distance = 0.1;
         g.post_place_retreat.min_distance = 0.05;
@@ -150,7 +159,7 @@ bool place(moveit::planning_interface::MoveGroup &group)
 
         return group.place("part", loc);
     }
-
+*/
 int main(int argc, char **argv)
     {
         ros::init (argc, argv, "arm_pick_place");
@@ -170,11 +179,28 @@ int main(int argc, char **argv)
         CRUSTCRAWLER_Mover::Ptr crustcrawler_mover;
         crustcrawler_mover.reset(new CRUSTCRAWLER_Mover(nh));
 
-        crustcrawler_mover->group->setPlanningTime(45.0);
+        crustcrawler_mover->group->setPlanningTime(5.0);
         crustcrawler_mover->group->setPlannerId("RRTConnectkConfigDefault");
 
         ROS_ERROR_STREAM("PLANNING FRAME IS : " << crustcrawler_mover->group->getPlanningFrame());
         ROS_ERROR_STREAM("EEF IS : " << crustcrawler_mover->group->getEndEffectorLink());
+
+        geometry_msgs::PoseStamped p;
+        p.header.frame_id = "base";
+        p.pose.position.x = 0.3;
+        p.pose.position.y = -0.3;
+        p.pose.position.z = 0.07;
+        p.pose.orientation.x = 0;
+        p.pose.orientation.y = 0.7;
+        p.pose.orientation.z = 0;
+        p.pose.orientation.w = 0.7;
+
+        moveit::planning_interface::MoveGroup::Plan my_plan;
+        crustcrawler_mover->group->setPoseTarget(p);
+        if(crustcrawler_mover->group->plan(my_plan))
+            crustcrawler_mover->group->execute(my_plan);
+        else
+            ROS_ERROR("No plans found to go directly to that pose");
 
         moveit_msgs::CollisionObject co;
         co.header.stamp = ros::Time::now();
@@ -216,17 +242,18 @@ int main(int argc, char **argv)
         co.operation = moveit_msgs::CollisionObject::ADD;
         co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.03;
         co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 0.03;
-        co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.03;
+        co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.1;
 
         co.primitive_poses[0].position.x = 0.3;
         co.primitive_poses[0].position.y = -0.1;
-        co.primitive_poses[0].position.z = 0.0;
+        co.primitive_poses[0].position.z = 0.04;
         pub_co.publish(co);
 
         // wait a bit for ros things to initialize
         ros::WallDuration(1.0).sleep();
 
         //pick(group);
+        std::cin.ignore();
         int iteration = 0;
         while (!pick(*crustcrawler_mover->group) && iteration < 10){
                 ros::WallDuration(1.0).sleep();

@@ -73,6 +73,9 @@ target_link_libraries(baxter_pick_place ${catkin_LIBRARIES})
 add_executable(crustcrawler_pick_place src/crustcrawler_pick_place.cpp)
 target_link_libraries(crustcrawler_pick_place ${catkin_LIBRARIES})
 
+add_executable(test_crustcrawler_pick_place src/test_crustcrawler_pick_place.cpp)
+target_link_libraries(test_crustcrawler_pick_place ${catkin_LIBRARIES})
+
 add_executable(moveit_pick_place_tests src/moveit_pick_place_tests.cpp)
 target_link_libraries(moveit_pick_place_tests ${catkin_LIBRARIES})
 

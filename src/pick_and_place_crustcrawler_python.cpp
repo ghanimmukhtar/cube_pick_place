@@ -66,6 +66,7 @@ class Pick_Place{
                 _crustcrawler_mover->group->setPlannerId("RRTConnectkConfigDefault");
                 ROS_INFO("Trying to Print the Planning Frame");
                 ROS_WARN_STREAM("Planning frame is: " << _crustcrawler_mover->group->getPlanningFrame());
+                ROS_ERROR_STREAM("EEF IS : " << _crustcrawler_mover->group->getEndEffectorLink());
                 //_robot.reset(new MoveGroup(_arm_group));
 
                 //Clean the scene:
@@ -211,6 +212,11 @@ class Pick_Place{
                         ROS_WARN("Place failed! Retrying ...");
                         WallDuration(1.0).sleep();
                         place_number_trials++;
+                    }
+
+                if(!_placed){
+                        ROS_ERROR("Place Total Failure !");
+                        return;
                     }
 
                 _crustcrawler_mover->group->detachObject(_grasp_object_name);
@@ -443,6 +449,7 @@ class Pick_Place{
                  * Place a target using the planning group
                  * */
 
+                //ROS_WARN_STREAM("TRYING TO PLACE, THE GROUP NAME IS : " << group);
                 //Obtain possible places:
                 vector<PlaceLocation> places = generate_places(place);
 
