@@ -140,18 +140,24 @@ class Pick_Place{
                 int pick_number_trials = 0, place_number_trials = 0, max_trials = 1;
                 //Add table and Coke can objects to the planning scene:
                 _pose_table = add_table(_table_object_name);
-                _pose_coke_can = add_grasp_block(_grasp_object_name, pick_place_topic->pick_pose);
+                geometry_msgs::Point the_point;
+                the_point.x = pick_place_topic->pick_pose[0];
+                the_point.y = pick_place_topic->pick_pose[1];
+                the_point.z = pick_place_topic->pick_pose[2];
+                vector<Point> the_point_vector;
+                the_point_vector.push_back(the_point);
+                _pose_coke_can = add_grasp_block(_grasp_object_name, the_point_vector);
 
                 WallDuration(1.0).sleep();
 
                 //Define target place pose:
-                _pose_place.position.x = pick_place_topic->place_pose[0].x;
-                _pose_place.position.y = pick_place_topic->place_pose[0].y;
-                _pose_place.position.z = pick_place_topic->place_pose[0].z;
+                _pose_place.position.x = pick_place_topic->place_pose[0];
+                _pose_place.position.y = pick_place_topic->place_pose[1];
+                _pose_place.position.z = pick_place_topic->place_pose[2];
 
-                _box_pose.position.x = pick_place_topic->pick_pose[0].x;
-                _box_pose.position.y = pick_place_topic->pick_pose[0].y;
-                _box_pose.position.z = pick_place_topic->pick_pose[0].z;
+                _box_pose.position.x = pick_place_topic->pick_pose[0];
+                _box_pose.position.y = pick_place_topic->pick_pose[1];
+                _box_pose.position.z = pick_place_topic->pick_pose[2];
 
                 _q.setEuler(0.0, 0.0, 0.0);
                 _pose_place.orientation.w = _q.getW();
