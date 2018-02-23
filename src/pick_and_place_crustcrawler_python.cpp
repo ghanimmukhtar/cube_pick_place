@@ -19,6 +19,8 @@
 
 #include <crustcrawler_mover_utils/crustcrawler_mover.hpp>
 #include <cube_pick_place/pick_place_pose.h>
+#include <static_object_position_tracking/ObjectsPositionsMap.h>
+#include <static_object_position_tracking/ObjectPositionID.h>
 
 using namespace moveit_simple_grasps;
 using namespace moveit_msgs;
@@ -62,7 +64,9 @@ public:
 
         else if(_mode == "with_kinect"){
             ROS_INFO_STREAM("PICK_PLACE : INIT : The mode is automatic with kinect, objects positions should come from static_object_position_tracking ....");
-            _pickup_place_pose_sub = _node.subscribe<cube_pick_place::pick_place_pose>("pick_place_pose", 10, &Pick_Place::pick_and_place_cb, this);
+            _object_position_pub = _node.advertise<cube_pick_place::pick_place_pose>("pick_place_pose", 1);
+            _objects_position_from_kinect_sub = _node.subscribe<static_object_position_tracking::ObjectsPositionsMap>("/visual/obj_pos_vector", 10, &Pick_Place::object_position_from_kinect_cb, this);
+            _pickup_place_pose_sub = _node.subscribe<cube_pick_place::pick_place_pose>("pick_place_position_kinect", 10, &Pick_Place::pick_and_place_cb, this);
         }
 
         //Create (debugging) publishers:
@@ -138,6 +142,21 @@ public:
     ~Pick_Place(){
 
     }
+
+    //This function is to use static_object_position_tracking to deduce object positions and publish them to pick_place_position_kinect
+    void object_position_from_kinect_cb(const static_object_position_tracking::ObjectsPositionsMapConstPtr& objects_positions_map){
+            if(!objects_positions_map->objects_positions_id.empty()){
+                    cube_pick_place::pick_place_pose msg;
+                    msg.pick_pose.push_back(objects_positions_map->objects_positions_id[0].object_position.point.x);
+                    msg.pick_pose.push_back(objects_positions_map->objects_positions_id[0].object_position.point.y);
+                    msg.pick_pose.push_back(objects_positions_map->objects_positions_id[0].object_position.point.z);
+
+                    msg.place_pose.push_back(objects_positions_map->objects_positions_id[0].object_position.point.x);
+                    msg.place_pose.push_back(-objects_positions_map->objects_positions_id[0].object_position.point.y);
+                    msg.place_pose.push_back(objects_positions_map->objects_positions_id[0].object_position.point.z);
+
+                }
+        }
 
     void pick_and_place_cb(const cube_pick_place::pick_place_poseConstPtr& pick_place_topic){
         _picked = false;
@@ -548,8 +567,8 @@ private:
     bool _picked = false, _placed = false;
     tf::Quaternion _q;
 
-    Publisher _grasps_pub, _places_pub, _pub_co, _pub_aco;
-    Subscriber _pickup_place_pose_sub;
+    Publisher _grasps_pub, _places_pub, _pub_co, _pub_aco, _object_position_pub;
+    Subscriber _pickup_place_pose_sub, _objects_position_from_kinect_sub;
     shared_ptr<SimpleActionClient<GenerateGraspsAction>> _grasp_ac;
     shared_ptr<SimpleActionClient<PickupAction>> _pickup_ac;
     shared_ptr<SimpleActionClient<PlaceAction>> _place_ac;
